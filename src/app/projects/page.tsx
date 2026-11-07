@@ -1,214 +1,235 @@
 'use client';
 
-import React, { useEffect, useState, use, Suspense } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { MOCK_PODS } from '@/lib/mocks/pod-auth.mock';
-import { PodHeader } from '@/features/pods/PodHeader';
-import { MemberList } from '@/features/pods/MemberList';
-import { AddMemberDialog } from '@/features/pods/AddMemberDialog';
-import { useMockSession } from '@/features/auth/useMockSession';
-import { usePermissions } from '@/lib/permissions/usePermissions';
-import { Can } from '@/lib/permissions/Can';
-import { PodMember, PodRole } from '@/types/auth-pod';
-import { Users, LayoutGrid, Plus, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import {
+  FolderKanban,
+  Plus,
+  RefreshCw,
+  AlertCircle,
+  ShieldCheck,
+  ShieldAlert,
+} from 'lucide-react';
+import { PageHeader, EmptyState, Button } from '@/components/ui';
+import { useProjects } from '@/hooks/useProjects';
+import { ProjectStatus } from '@/types';
+import { ProjectFilters } from '@/components/projects/ProjectFilters';
+import { ProjectCard } from '@/components/projects/ProjectCard';
+import { ProjectTable } from '@/components/projects/ProjectTable';
+import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
+import { useAuth, UserRole } from '@/lib/auth/rbac';
 
-// A pod has one Pod Lead. Making someone Pod Lead demotes the previous one.
-const demoteLeads = (list: PodMember[]): PodMember[] =>
-  list.map((m) => (m.roleInPod === 'Pod Lead' ? { ...m, roleInPod: 'Contributor' as PodRole } : m));
-
-function PodDetailContent({ podId }: { podId: string }) {
+export default function ProjectsPage() {
   const router = useRouter();
-  const session = useMockSession();
-  const user = session.user;
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<ProjectStatus | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const podData = MOCK_PODS.find((p) => p.id === podId);
-  const [members, setMembers] = useState<PodMember[]>(podData?.members ?? []);
-  const [activeTab, setActiveTab] = useState<'board' | 'members'>('members');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { user, setRole, canCreateProject } = useAuth();
 
-  // The user's role in THIS pod, taken from the live member list, so that
-  // pod-scoped rules ("own pod only") work.
-  const myPodRole = user ? members.find((m) => m.userId === user.id)?.roleInPod : undefined;
-  const userPodRoles: Record<string, PodRole> = myPodRole ? { [podId]: myPodRole } : {};
-  // Least privilege while there is no session.
-  const currentUser = { globalRole: user?.globalRole ?? ('Contributor' as const), userPodRoles };
-  const { can } = usePermissions(currentUser);
+  // TanStack Query hook
+  const {
+    data: projects,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useProjects({
+    search: search.trim() || undefined,
+    status: status !== 'all' ? status : undefined,
+  });
 
-  useEffect(() => {
-    if (session.status === 'signed-out') router.replace('/sign-in');
-  }, [session.status, router]);
+  const totalCount = projects?.length ?? 0;
 
-  if (session.status !== 'signed-in' || !user) {
-    return <div className="p-6 text-slate-400">Checking your session...</div>;
-  }
-
-  if (!podData) {
-    return (
-      <div className="bg-slate-950 text-slate-100 rounded-2xl p-12 text-center space-y-3">
-        <h2 className="text-lg font-semibold">Pod not found</h2>
-        <p className="text-sm text-slate-400">
-          This pod does not exist, or you do not have access to it.
-        </p>
-        <Link href="/projects" className="inline-block text-sm text-indigo-400 hover:text-indigo-300">
-          Back to Projects
-        </Link>
-      </div>
-    );
-  }
-
-  const canManageMembers = can('manage_pod_members', podId);
-  const canAssignLead = can('assign_pod_lead', podId);
-  const lead = members.find((m) => m.roleInPod === 'Pod Lead');
-
-  const handleAddMember = (newMember: PodMember) => {
-    if (!canManageMembers) return;
-    setMembers((prev) => {
-      if (
-        prev.some(
-          (member) =>
-            member.userId === newMember.userId ||
-            member.email.trim().toLowerCase() === newMember.email.trim().toLowerCase()
-        )
-      ) {
-        return prev;
-      }
-      const base = newMember.roleInPod === 'Pod Lead' ? demoteLeads(prev) : prev;
-      return [...base, newMember];
-    });
-  };
-
-  const handleUpdateMember = (updatedMember: PodMember) => {
-    if (!canManageMembers) return;
-    setMembers((prev) => {
-      const currentMember = prev.find((member) => member.id === updatedMember.id);
-      if (!currentMember) return prev;
-
-      const roleChanged = currentMember.roleInPod !== updatedMember.roleInPod;
-      if (
-        roleChanged &&
-        (currentMember.roleInPod === 'Pod Lead' || updatedMember.roleInPod === 'Pod Lead') &&
-        !canAssignLead
-      ) {
-        return prev;
-      }
-      if (
-        prev.some(
-          (member) =>
-            member.id !== updatedMember.id &&
-            member.email.trim().toLowerCase() === updatedMember.email.trim().toLowerCase()
-        )
-      ) {
-        return prev;
-      }
-
-      const base = updatedMember.roleInPod === 'Pod Lead' ? demoteLeads(prev) : prev;
-      return base.map((member) => (member.id === updatedMember.id ? updatedMember : member));
-    });
-  };
-
-  const handleRemoveMember = (memberId: string) => {
-    if (!canManageMembers) return;
-    setMembers((prev) => prev.filter((m) => m.id !== memberId));
-  };
+  // Filtered count based on current client filters
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+    return projects;
+  }, [projects]);
 
   return (
-    <div className="bg-slate-950 text-slate-100 rounded-2xl p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/projects"
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Projects
-        </Link>
-        <span className="text-xs font-mono text-indigo-400 bg-indigo-950/60 border border-indigo-800 px-3 py-1 rounded-full">
-          Mock session: {user.name} ({user.globalRole})
-        </span>
-      </div>
-
-      <PodHeader
-        pod={{
-          ...podData,
-          leadId: lead?.userId ?? null,
-          leadName: lead?.name,
-          memberCount: members.length,
-          members,
-        }}
-      />
-
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div className="space-y-6 animate-fade-in pb-12">
+      {/* RBAC Role Indicator Banner */}
+      <div className="p-3 px-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('members')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'members'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Users className="w-4 h-4" /> Members ({members.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('board')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'board'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" /> Board
-          </button>
+          {canCreateProject ? (
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          ) : (
+            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+          )}
+          <span>
+            Logged in as <strong className="text-white">{user.name}</strong> ({user.role}).{' '}
+            {canCreateProject ? (
+              <span className="text-emerald-300 font-medium">
+                Super Admin privileges active (can create new projects).
+              </span>
+            ) : (
+              <span className="text-slate-300">
+                &quot;New Project&quot; action requires Super Admin role.
+              </span>
+            )}
+          </span>
         </div>
 
-        <Can action="manage_pod_members" podId={podId} currentUser={currentUser}>
-          <button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Add Member
-          </button>
-        </Can>
+        {/* Quick Role Switcher for Testing */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-slate-400 font-medium mr-1">Switch Role:</span>
+          {(['Frontend Lead', 'Super Admin', 'Pod Lead'] as UserRole[]).map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRole(r)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
+                user.role === r
+                  ? 'bg-[#5851d8] text-white'
+                  : 'bg-white/10 hover:bg-white/20 text-slate-300'
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {activeTab === 'members' ? (
-        <MemberList
-          members={members}
-          onRemoveMember={handleRemoveMember}
-          onUpdateMember={handleUpdateMember}
-          canManageMembers={canManageMembers}
-          canAssignLead={canAssignLead}
+      {/* Page Header */}
+      <PageHeader
+        title="Projects"
+        description="Cross-pod software projects, repositories, delivery milestones, and sprint cadences."
+        breadcrumbs={[
+          { label: 'Home', href: '/' },
+          { label: 'Projects' },
+        ]}
+        actions={
+          canCreateProject ? (
+            <Button
+              variant="primary"
+              onClick={() => setIsCreateModalOpen(true)}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              New Project
+            </Button>
+          ) : undefined
+        }
+      />
+
+      {/* Search & Filter Toolbar */}
+      <ProjectFilters
+        search={search}
+        onSearchChange={setSearch}
+        status={status}
+        onStatusChange={setStatus}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        totalCount={totalCount}
+        filteredCount={filteredProjects.length}
+      />
+
+      {/* Main Content Area: Loading, Error, Empty, or Data */}
+      {isLoading ? (
+        // Loading Skeletons
+        viewMode === 'cards' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div
+                key={n}
+                className="h-52 bg-white rounded-2xl border border-slate-200/80 p-5 animate-pulse flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-xl" />
+                  <div className="h-5 bg-slate-100 rounded-md w-3/4" />
+                  <div className="h-3 bg-slate-100 rounded-md w-1/2" />
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex justify-between">
+                  <div className="h-4 bg-slate-100 rounded-md w-24" />
+                  <div className="h-4 bg-slate-100 rounded-md w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 animate-pulse space-y-4">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <div key={n} className="h-8 bg-slate-100 rounded-md w-full" />
+            ))}
+          </div>
+        )
+      ) : isError ? (
+        // Error State
+        <div className="p-8 rounded-2xl bg-rose-50/80 border border-rose-200 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-semibold text-rose-900">
+            Failed to Load Projects
+          </h3>
+          <p className="text-xs text-rose-600 max-w-sm mx-auto">
+            {error instanceof Error ? error.message : 'An unexpected error occurred while fetching projects.'}
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => refetch()}
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+          >
+            Try Again
+          </Button>
+        </div>
+      ) : filteredProjects.length === 0 ? (
+        // Empty State
+        <EmptyState
+          icon={FolderKanban}
+          title={search || status !== 'all' ? 'No Matching Projects' : 'No Projects Found'}
+          description={
+            search || status !== 'all'
+              ? 'No projects match your current search or filter criteria. Try resetting filters or using a different query.'
+              : 'There are no active projects configured in Wrkld yet. Get started by creating your first project.'
+          }
+          action={
+            search || status !== 'all' ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setSearch('');
+                  setStatus('all');
+                }}
+              >
+                Clear Filters
+              </Button>
+            ) : canCreateProject ? (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsCreateModalOpen(true)}
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
+                Create Project
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center space-y-3">
-          <LayoutGrid className="w-8 h-8 text-slate-500 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-300">Kanban Board Integration Point</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            This area is assigned to Person 4 (Task & Issue Management Developer) for the DnD Kanban Board (M11, M12).
-          </p>
-        </div>
+        // Projects View
+        viewMode === 'cards' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredProjects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        ) : (
+          <ProjectTable projects={filteredProjects} />
+        )
       )}
 
-      <AddMemberDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onAddMember={handleAddMember}
-        existingEmails={members.map((member) => member.email)}
-        canAssignLead={canAssignLead}
+      {/* Project Creation Modal */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={(slug) => {
+          router.push(`/projects/${slug}`);
+        }}
       />
     </div>
-  );
-}
-
-// Keyed by pod id so member state resets when the user switches to another pod.
-function PodDetailResolver({ params }: { params: Promise<{ slug: string; pod: string }> }) {
-  const { pod } = use(params);
-  return <PodDetailContent key={pod} podId={pod} />;
-}
-
-export default function PodDetailPage({ params }: { params: Promise<{ slug: string; pod: string }> }) {
-  return (
-    <Suspense fallback={<div className="p-6 text-slate-400">Loading pod details...</div>}>
-      <PodDetailResolver params={params} />
-    </Suspense>
   );
 }
