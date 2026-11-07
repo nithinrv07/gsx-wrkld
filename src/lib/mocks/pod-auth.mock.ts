@@ -1,0 +1,117 @@
+import { User, Pod, PodMember } from '@/types/auth-pod';
+
+export const MOCK_USERS: User[] = [
+  {
+    id: 'usr-1',
+    name: 'Nithin R V',
+    email: 'nithin@gsx.org',
+    image: 'https://github.com/nithinrv07.png',
+    githubHandle: 'nithinrv07',
+    globalRole: 'Super Admin',
+  },
+  {
+    id: 'usr-2',
+    name: 'SHWETHA V',
+    email: 'shwetha@gsx.org',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    githubHandle: 'shwetha_v',
+    globalRole: 'Project Lead',
+  },
+  {
+    id: 'usr-3',
+    name: 'Nithyasri R',
+    email: 'nithyasri@gsx.org',
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+    githubHandle: 'nithyasri_r',
+    globalRole: 'Pod Lead',
+  },
+  {
+    id: 'usr-4',
+    name: 'Megha I',
+    email: 'megha@gsx.org',
+    image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+    githubHandle: 'megha_i',
+    globalRole: 'Contributor',
+  },
+  {
+    id: 'usr-5',
+    name: 'Manya',
+    email: 'manya@gsx.org',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+    githubHandle: 'manya_dev',
+    globalRole: 'Contributor',
+  },
+];
+
+export const MOCK_POD_MEMBERS: PodMember[] = [
+  {
+    id: 'mem-1',
+    userId: 'usr-3',
+    name: 'Nithyasri R',
+    email: 'nithyasri@gsx.org',
+    githubHandle: 'nithyasri_r',
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+    roleInPod: 'Pod Lead',
+    joinedDate: '2026-01-15',
+  },
+  {
+    id: 'mem-2',
+    userId: 'usr-4',
+    name: 'Megha I',
+    email: 'megha@gsx.org',
+    githubHandle: 'megha_i',
+    avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+    roleInPod: 'Contributor',
+    joinedDate: '2026-01-16',
+  },
+  {
+    id: 'mem-3',
+    userId: 'usr-5',
+    name: 'Manya',
+    email: 'manya@gsx.org',
+    githubHandle: 'manya_dev',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+    roleInPod: 'Contributor',
+    joinedDate: '2026-01-18',
+  },
+];
+
+export const MOCK_PODS: Pod[] = [
+  {
+    id: 'pod-fe',
+    projectSlug: 'wrkld',
+    name: 'Frontend Pod',
+    type: 'FE',
+    leadId: 'usr-3',
+    leadName: 'Nithyasri R',
+    memberCount: MOCK_POD_MEMBERS.length,
+    members: MOCK_POD_MEMBERS,
+  },
+  {
+    id: 'pod-be',
+    projectSlug: 'wrkld',
+    name: 'Backend Pod',
+    type: 'BE',
+    leadId: null,
+    memberCount: 0,
+    members: [],
+  },
+  {
+    id: 'pod-int',
+    projectSlug: 'wrkld',
+    name: 'Integration Pod',
+    type: 'INT',
+    leadId: null,
+    memberCount: 0,
+    members: [],
+  },
+  {
+    id: 'pod-qa',
+    projectSlug: 'wrkld',
+    name: 'QA & UI Pod',
+    type: 'QA',
+    leadId: null,
+    memberCount: 0,
+    members: [],
+  },
+];
