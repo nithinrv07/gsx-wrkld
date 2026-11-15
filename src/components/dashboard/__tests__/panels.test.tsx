@@ -18,7 +18,7 @@ describe('MyTicketsPanel', () => {
     expect(screen.getByText('3 tickets')).toBeInTheDocument();
     expect(screen.queryByText('CPT-77')).not.toBeInTheDocument();
     const link = screen.getByRole('link', { name: /WRK-108/ });
-    expect(link).toHaveAttribute('href', '/projects/wrkld-platform?ticket=WRK-108');
+    expect(link).toHaveAttribute('href', '/projects/wrkld/pods/pod-be?ticket=WRK-108');
     expect(link).toHaveTextContent('PR Open / Review');
     expect(link).toHaveTextContent('Backend Pod');
     expect(link).toHaveTextContent('Integration Ticket');
@@ -63,7 +63,7 @@ describe('AlertsPanel', () => {
   it('lists open blockers with project, pod, status, severity and an unread badge', () => {
     render(<AlertsPanel blockers={blockers} onRetry={() => {}} readKeys={[]} onReadKeysChange={() => {}} />);
     expect(screen.getByLabelText('2 unread blockers')).toHaveTextContent('2');
-    expect(screen.getByRole('link', { name: /WRK-131/ })).toHaveAttribute('href', '/projects/wrkld-platform?ticket=WRK-131');
+    expect(screen.getByRole('link', { name: /WRK-131/ })).toHaveAttribute('href', '/projects/wrkld/pods/pod-be?ticket=WRK-131');
     expect(screen.getByText('High')).toBeInTheDocument();
     expect(screen.getByText('AI Analytics')).toBeInTheDocument();
   });

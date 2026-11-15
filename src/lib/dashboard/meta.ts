@@ -1,7 +1,6 @@
 import {
   PodCode,
   ProjectStatus,
-  Role,
   Severity,
   StatusCounts,
   TicketStatus,
@@ -115,13 +114,6 @@ export const PROJECT_STATUS_BADGE: Record<ProjectStatus, { status: StatusType; l
   'in-progress': { status: 'in-progress', label: 'In Progress' },
   blocked: { status: 'blocked', label: 'On Hold' },
   completed: { status: 'completed', label: 'Completed' },
-};
-
-export const ROLE_LABELS: Record<Role, string> = {
-  contributor: 'Contributor',
-  'pod-lead': 'Pod Lead',
-  'project-lead': 'Project Lead',
-  'super-admin': 'Super Admin',
 };
 
 /** Ticket counts grouped into not started / in flight / done. Counts only — no percentages. */

@@ -4,7 +4,8 @@ import React from 'react';
 import { PodCode, TicketStatus } from '@/types/dashboard';
 import { POD_META } from '@/lib/dashboard/meta';
 import { can } from '@/lib/dashboard/permissions';
-import { useCurrentRole, useProjectAnalytics } from '@/lib/dashboard/queries';
+import { useProjectAnalytics } from '@/lib/dashboard/queries';
+import { useViewer } from '@/lib/dashboard/viewer';
 import { DashboardProviders } from '@/components/dashboard/DashboardProviders';
 import { PanelError, SkeletonBlock } from '@/components/dashboard/primitives';
 import { Card } from '@/components/ui';
@@ -44,7 +45,7 @@ export const ProjectProgressSection: React.FC<ProjectProgressSectionProps> = ({
   selectedStatus,
   onSelectStatus,
 }) => {
-  const [role] = useCurrentRole();
+  const { viewer } = useViewer();
   const query = useProjectAnalytics(slug);
 
   if (query.isPending) return <ProjectProgressSkeleton />;
@@ -69,7 +70,7 @@ export const ProjectProgressSection: React.FC<ProjectProgressSectionProps> = ({
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <PodProgressBars
           pods={project.pods}
-          showLeads={can(role, 'analytics:view-pod-leads')}
+          showLeads={!!viewer && can(viewer.role, 'analytics:view-pod-leads')}
           selectedPod={pod}
           hrefForPod={hrefForPod}
         />

@@ -2,22 +2,17 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Eye, Mail, Plus, RotateCw } from 'lucide-react';
+import { AtSign, Mail, Plus, RotateCw } from 'lucide-react';
 import { Button, Card, PodBadge } from '@/components/ui';
-import { CurrentUser, Role } from '@/types/dashboard';
-import { ROLE_LABELS } from '@/lib/dashboard/meta';
+import { CurrentUser } from '@/types/dashboard';
 import { can } from '@/lib/dashboard/permissions';
 import { InitialsAvatar } from './primitives';
-
-const ROLES = Object.keys(ROLE_LABELS) as Role[];
 
 export interface DashboardHeaderProps {
   user: CurrentUser;
   onRefresh: () => void;
   isRefreshing?: boolean;
   updatedAt?: number;
-  /** Dev-only role preview. Hidden when not provided. */
-  onPreviewRole?: (role: Role) => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -25,7 +20,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onRefresh,
   isRefreshing,
   updatedAt,
-  onPreviewRole,
 }) => {
   const firstName = user.name.split(' ')[0];
   return (
@@ -46,7 +40,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           >
             Refresh
           </Button>
-          {can(user.role, 'projects:create') && (
+          {can(user.role, 'create_project') && (
             <Link href="/projects">
               <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />}>
                 New project
@@ -68,30 +62,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <p className="truncate font-semibold text-slate-900">{user.name}</p>
             {user.pod && <PodBadge pod={user.pod} />}
           </div>
-          <p className="text-xs text-slate-500">
-            {user.title} · {ROLE_LABELS[user.role]}
-          </p>
+          <p className="text-xs text-slate-500">{user.role}</p>
           <p className="mt-1 flex items-center gap-1.5 truncate text-xs text-slate-400">
-            <Mail className="h-3 w-3" /> {user.email}
+            <Mail className="h-3 w-3 shrink-0" /> {user.email}
           </p>
-          {onPreviewRole && (
-            <label className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-400">
-              <Eye className="h-3 w-3" />
-              Preview as
-              <select
-                aria-label="Preview dashboard as role"
-                value={user.role}
-                onChange={(e) => onPreviewRole(e.target.value as Role)}
-                className="rounded-md border border-dashed border-slate-300 bg-transparent px-1 py-0.5 text-[11px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              >
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABELS[r]}
-                  </option>
-                ))}
-              </select>
-              <span className="rounded bg-amber-50 px-1 text-[10px] font-semibold text-amber-700">DEV</span>
-            </label>
+          {user.githubHandle && (
+            <p className="flex items-center gap-1.5 truncate text-xs text-slate-400">
+              <AtSign className="h-3 w-3 shrink-0" /> {user.githubHandle}
+            </p>
           )}
         </div>
       </Card>

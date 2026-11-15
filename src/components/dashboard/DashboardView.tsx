@@ -1,16 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useIsFetching } from '@tanstack/react-query';
 import {
   dashboardKeys,
-  useCurrentRole,
   useDashboardSummary,
   useMyTickets,
   useOpenBlockers,
   useRefreshDashboard,
 } from '@/lib/dashboard/queries';
 import { useReadAlerts } from '@/lib/dashboard/local-store';
+import { dashboardRoutes } from '@/lib/dashboard/routes';
+import { useViewer } from '@/lib/dashboard/viewer';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardStats } from './DashboardStats';
 import { ProjectOverview } from './ProjectOverview';
@@ -18,18 +20,22 @@ import { MyTicketsPanel } from './MyTicketsPanel';
 import { AlertsPanel } from './AlertsPanel';
 import { DashboardEmptyState, DashboardError, DashboardSkeleton } from './DashboardStates';
 
-const SHOW_ROLE_PREVIEW = process.env.NODE_ENV !== 'production';
-
 export function DashboardView() {
-  const [, setRole] = useCurrentRole();
+  const router = useRouter();
+  const { status, user } = useViewer();
   const summary = useDashboardSummary();
   const tickets = useMyTickets();
   const blockers = useOpenBlockers();
-  const [readKeys, setReadKeys] = useReadAlerts();
+  const [readKeys, setReadKeys] = useReadAlerts(user?.id ?? 'anonymous');
   const refresh = useRefreshDashboard();
   const isFetching = useIsFetching({ queryKey: dashboardKeys.all }) > 0;
 
-  if (summary.isPending) return <DashboardSkeleton />;
+  // Same convention as the Pod pages: no session, go to sign-in.
+  useEffect(() => {
+    if (status === 'signed-out') router.replace(dashboardRoutes.signIn);
+  }, [status, router]);
+
+  if (!user || summary.isPending) return <DashboardSkeleton />;
   if (summary.isError)
     return (
       <DashboardError
@@ -45,11 +51,10 @@ export function DashboardView() {
   return (
     <div className="space-y-6">
       <DashboardHeader
-        user={data.user}
+        user={user}
         onRefresh={refresh}
         isRefreshing={isFetching}
         updatedAt={summary.dataUpdatedAt}
-        onPreviewRole={SHOW_ROLE_PREVIEW ? setRole : undefined}
       />
 
       {isEmpty ? (

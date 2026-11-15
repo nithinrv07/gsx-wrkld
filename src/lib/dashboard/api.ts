@@ -9,20 +9,8 @@
  *   ?mock=empty          the user has no projects, tickets or blockers
  *   ?mock=slow           3s latency to inspect loading skeletons
  */
-import {
-  DashboardSummary,
-  ProjectAnalytics,
-  ProjectSummary,
-  Role,
-  Ticket,
-} from '@/types/dashboard';
-import {
-  MOCK_USER,
-  OVERALL_PROGRESS,
-  PROJECT_RECORDS,
-  TICKETS,
-  projectStatusCounts,
-} from '@/mocks/dashboard-data';
+import { DashboardSummary, ProjectAnalytics, ProjectSummary, Ticket, Viewer } from '@/types/dashboard';
+import { OVERALL_PROGRESS, PROJECT_RECORDS, TICKETS, projectStatusCounts } from '@/mocks/dashboard-data';
 import { can } from './permissions';
 
 export class ApiError extends Error {
@@ -48,17 +36,18 @@ async function simulate(resource: Resource) {
   return { empty: mode === 'empty' };
 }
 
-const visibleProjects = (role: Role, userId: string) =>
-  PROJECT_RECORDS.filter((p) => can(role, 'projects:view-all') || p.memberIds.includes(userId));
+const visibleProjects = (viewer: Viewer) =>
+  PROJECT_RECORDS.filter((p) => can(viewer.role, 'projects:view-all') || p.memberIds.includes(viewer.id));
 
 const isOpen = (t: Ticket) => t.status !== 'done';
+const isMine = (viewer: Viewer) => (t: Ticket) => t.assignee?.id === viewer.id;
 
-export async function fetchDashboardSummary(role: Role): Promise<DashboardSummary> {
+export async function fetchDashboardSummary(viewer: Viewer): Promise<DashboardSummary> {
   const { empty } = await simulate('summary');
-  const user = { ...MOCK_USER, role };
-  const projects = empty ? [] : visibleProjects(role, user.id);
+  const projects = empty ? [] : visibleProjects(viewer);
   const slugs = new Set(projects.map((p) => p.slug));
-  const mine = empty ? [] : TICKETS.filter((t) => t.assignee?.id === user.id);
+  const mine = empty ? [] : TICKETS.filter(isMine(viewer));
+  const inScope = (t: Ticket) => !empty && slugs.has(t.projectSlug);
 
   const summaries: ProjectSummary[] = projects.map((p) => ({
     slug: p.slug,
@@ -70,21 +59,22 @@ export async function fetchDashboardSummary(role: Role): Promise<DashboardSummar
   }));
 
   return {
-    user,
     overallProgress: empty
       ? 0
-      : can(role, 'projects:view-all')
+      : can(viewer.role, 'projects:view-all')
       ? OVERALL_PROGRESS.workspace
       : OVERALL_PROGRESS.member,
     stats: {
       projects: summaries.length,
       assignedTickets: mine.filter(isOpen).length,
-      openBlockers: TICKETS.filter(
-        (t) => !empty && t.type === 'blocker' && isOpen(t) && slugs.has(t.projectSlug)
-      ).length,
-      awaitingReview: can(role, 'tickets:view-review-queue')
+      openBlockers: TICKETS.filter((t) => inScope(t) && t.type === 'blocker' && isOpen(t)).length,
+      // Pod Leads see their own pod's review queue; Project Leads and above see all pods.
+      awaitingReview: can(viewer.role, 'tickets:view-review-queue')
         ? TICKETS.filter(
-            (t) => !empty && t.status === 'pr-review' && slugs.has(t.projectSlug) && t.pod === user.pod
+            (t) =>
+              inScope(t) &&
+              t.status === 'pr-review' &&
+              (viewer.role !== 'Pod Lead' || t.pod === viewer.pod)
           ).length
         : undefined,
     },
@@ -92,42 +82,39 @@ export async function fetchDashboardSummary(role: Role): Promise<DashboardSummar
   };
 }
 
-export async function fetchMyTickets(role: Role): Promise<Ticket[]> {
+export async function fetchMyTickets(viewer: Viewer): Promise<Ticket[]> {
   const { empty } = await simulate('tickets');
-  void role;
   if (empty) return [];
-  return TICKETS.filter((t) => t.assignee?.id === MOCK_USER.id && t.type !== 'blocker').sort(
-    (a, b) => b.updatedAt.localeCompare(a.updatedAt)
+  return TICKETS.filter(isMine(viewer)).sort((a, b) =>
+    b.updatedAt.localeCompare(a.updatedAt)
   );
 }
 
 /** Open, manually created Blocker Flag tickets. No automatic escalation (out of MVP scope). */
-export async function fetchOpenBlockers(role: Role): Promise<Ticket[]> {
+export async function fetchOpenBlockers(viewer: Viewer): Promise<Ticket[]> {
   const { empty } = await simulate('alerts');
   if (empty) return [];
-  const slugs = new Set(visibleProjects(role, MOCK_USER.id).map((p) => p.slug));
-  return TICKETS.filter((t) => t.type === 'blocker' && isOpen(t) && slugs.has(t.projectSlug)).sort(
-    (a, b) => b.updatedAt.localeCompare(a.updatedAt)
+  const slugs = new Set(visibleProjects(viewer).map((p) => p.slug));
+  return TICKETS.filter((t) => t.type === 'blocker' && isOpen(t) && slugs.has(t.projectSlug)).sort((a, b) =>
+    b.updatedAt.localeCompare(a.updatedAt)
   );
 }
 
-export async function fetchProjectAnalytics(slug: string, role: Role): Promise<ProjectAnalytics> {
+export async function fetchProjectAnalytics(slug: string, viewer: Viewer): Promise<ProjectAnalytics> {
   const { empty } = await simulate('analytics');
-  const record = visibleProjects(role, MOCK_USER.id).find((p) => p.slug === slug);
+  const record = visibleProjects(viewer).find((p) => p.slug === slug);
   if (empty || !record) throw new ApiError('Project not found or you do not have access to it.', 404);
   const { memberIds: _members, ...rest } = record;
   void _members;
   return {
     ...rest,
     statusCounts: projectStatusCounts(record),
-    myTicketCount: TICKETS.filter(
-      (t) => t.projectSlug === slug && t.assignee?.id === MOCK_USER.id && isOpen(t)
-    ).length,
+    myTicketCount: TICKETS.filter((t) => t.projectSlug === slug && isMine(viewer)(t) && isOpen(t)).length,
   };
 }
 
-export async function fetchProjectTickets(slug: string, role: Role): Promise<Ticket[]> {
+export async function fetchProjectTickets(slug: string, viewer: Viewer): Promise<Ticket[]> {
   await simulate('analytics');
-  void role;
+  if (!visibleProjects(viewer).some((p) => p.slug === slug)) return [];
   return TICKETS.filter((t) => t.projectSlug === slug);
 }

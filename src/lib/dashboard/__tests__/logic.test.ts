@@ -5,21 +5,25 @@ import { dashboardRoutes } from '../routes';
 import { counts } from '@/test/fixtures';
 
 describe('can (role-aware UI rules)', () => {
-  it('only lets project leads and super admins create projects', () => {
-    expect(can('contributor', 'projects:create')).toBe(false);
-    expect(can('pod-lead', 'projects:create')).toBe(false);
-    expect(can('project-lead', 'projects:create')).toBe(true);
-    expect(can('super-admin', 'projects:create')).toBe(true);
+  it('follows the shared RBAC matrix: only Super Admins create projects', () => {
+    expect(can('Contributor', 'create_project')).toBe(false);
+    expect(can('Pod Lead', 'create_project')).toBe(false);
+    expect(can('Project Lead', 'create_project')).toBe(false);
+    expect(can('Super Admin', 'create_project')).toBe(true);
+  });
+
+  it('lets every role flag a blocker (shared rule)', () => {
+    expect(can('Contributor', 'flag_blocker')).toBe(true);
   });
 
   it('hides the review queue from contributors', () => {
-    expect(can('contributor', 'tickets:view-review-queue')).toBe(false);
-    expect(can('pod-lead', 'tickets:view-review-queue')).toBe(true);
+    expect(can('Contributor', 'tickets:view-review-queue')).toBe(false);
+    expect(can('Pod Lead', 'tickets:view-review-queue')).toBe(true);
   });
 
   it('limits workspace-wide project visibility to super admins', () => {
-    expect(can('project-lead', 'projects:view-all')).toBe(false);
-    expect(can('super-admin', 'projects:view-all')).toBe(true);
+    expect(can('Project Lead', 'projects:view-all')).toBe(false);
+    expect(can('Super Admin', 'projects:view-all')).toBe(true);
   });
 });
 
@@ -34,9 +38,10 @@ describe('countByPhase', () => {
 
 describe('dashboardRoutes', () => {
   it('builds ticket and analytics links', () => {
-    expect(dashboardRoutes.ticket({ projectSlug: 'wrkld-platform', key: 'WRK-104' })).toBe(
-      '/projects/wrkld-platform?ticket=WRK-104'
+    expect(dashboardRoutes.ticket({ projectSlug: 'wrkld', pod: 'FE', key: 'WRK-104' })).toBe(
+      '/projects/wrkld/pods/pod-fe?ticket=WRK-104'
     );
+    expect(dashboardRoutes.podBoard('wrkld', 'INT')).toBe('/projects/wrkld/pods/pod-int');
     expect(dashboardRoutes.analytics('ai-analytics', 'QA')).toBe('/analytics?project=ai-analytics&pod=QA');
     expect(dashboardRoutes.analytics()).toBe('/analytics');
   });

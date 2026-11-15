@@ -19,7 +19,7 @@ export const ticket = (overrides: Partial<Ticket> = {}): Ticket => ({
   status: 'in-progress',
   type: 'story',
   pod: 'FE',
-  projectSlug: 'wrkld-platform',
+  projectSlug: 'wrkld',
   projectName: 'Wrkld Platform',
   updatedAt: '2026-11-07T05:40:00Z',
   ...overrides,

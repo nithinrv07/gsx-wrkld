@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useIsFetching } from '@tanstack/react-query';
-import { BarChart2, ExternalLink, RotateCw } from 'lucide-react';
+import { BarChart2, LayoutGrid, RotateCw } from 'lucide-react';
 import { Button, EmptyState, PageHeader, StatusBadge } from '@/components/ui';
 import { PodCode, TicketStatus } from '@/types/dashboard';
 import { POD_CODES, POD_META, PROJECT_STATUS_BADGE } from '@/lib/dashboard/meta';
 import { dashboardRoutes } from '@/lib/dashboard/routes';
 import { dashboardKeys, useDashboardSummary, useRefreshDashboard } from '@/lib/dashboard/queries';
+import { useViewer } from '@/lib/dashboard/viewer';
 import { DashboardError } from '@/components/dashboard/DashboardStates';
 import { ProjectProgressSection, ProjectProgressSkeleton } from './ProjectProgressSection';
 import { ProjectTicketsTable } from './ProjectTicketsTable';
@@ -21,10 +22,15 @@ export function AnalyticsView() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const { status: sessionStatus } = useViewer();
   const summary = useDashboardSummary();
   const refresh = useRefreshDashboard();
   const isFetching = useIsFetching({ queryKey: dashboardKeys.all }) > 0;
   const [status, setStatus] = useState<TicketStatus | undefined>();
+
+  useEffect(() => {
+    if (sessionStatus === 'signed-out') router.replace(dashboardRoutes.signIn);
+  }, [sessionStatus, router]);
 
   const projects = summary.data?.projects ?? [];
   const requested = params.get('project');
@@ -130,10 +136,11 @@ export function AnalyticsView() {
           ))}
         </select>
         <Link
-          href={dashboardRoutes.project(project.slug)}
+          href={dashboardRoutes.podBoard(project.slug, pod ?? 'FE')}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5851d8] hover:underline sm:ml-auto"
         >
-          Open project <ExternalLink className="h-3.5 w-3.5" />
+          <LayoutGrid className="h-3.5 w-3.5" />
+          {pod ? `Open ${POD_META[pod].name} pod board` : 'Open pod boards'}
         </Link>
       </div>
 

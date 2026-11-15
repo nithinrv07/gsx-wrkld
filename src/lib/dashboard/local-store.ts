@@ -60,10 +60,14 @@ function createLocalStore<T>(key: string, fallback: T) {
   };
 }
 
-/** Dev-only "preview as role" switch. Real role comes from the signed-in session. */
-export const usePreviewRole = createLocalStore<
-  'contributor' | 'pod-lead' | 'project-lead' | 'super-admin'
->('wrkld.dashboard.previewRole', 'pod-lead');
+const readAlertStores = new Map<string, ReturnType<typeof createLocalStore<string[]>>>();
 
-/** Keys of blocker alerts the user has marked as read. */
-export const useReadAlerts = createLocalStore<string[]>('wrkld.dashboard.readAlerts', []);
+/** Keys of blocker alerts the given user has marked as read (stored per user). */
+export function useReadAlerts(userId: string) {
+  let store = readAlertStores.get(userId);
+  if (!store) {
+    store = createLocalStore<string[]>(`wrkld.dashboard.readAlerts.${userId}`, []);
+    readAlertStores.set(userId, store);
+  }
+  return store();
+}

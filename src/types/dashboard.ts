@@ -6,7 +6,10 @@
  * defined in the technical documentation).
  */
 
-export type Role = 'contributor' | 'pod-lead' | 'project-lead' | 'super-admin';
+import type { GlobalRole } from './auth-pod';
+
+/** Roles come from the shared auth module. */
+export type Role = GlobalRole;
 
 export type PodCode = 'FE' | 'BE' | 'INT' | 'QA';
 
@@ -37,7 +40,15 @@ export interface Person {
 
 export interface CurrentUser extends Person {
   email: string;
-  title: string;
+  githubHandle?: string;
+  role: Role;
+  /** The pod the user leads or belongs to, if any. */
+  pod?: PodCode;
+}
+
+/** Who is asking: passed to every dashboard request. */
+export interface Viewer {
+  id: string;
   role: Role;
   pod?: PodCode;
 }
@@ -79,7 +90,6 @@ export interface ProjectAnalytics extends ProjectSummary {
 }
 
 export interface DashboardSummary {
-  user: CurrentUser;
   /** Overall progress across the user's projects, as reported by the backend. */
   overallProgress: number;
   stats: {
