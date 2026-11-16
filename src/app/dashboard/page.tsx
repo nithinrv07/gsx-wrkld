@@ -1,4 +1,8 @@
-'use client';
+import type { Metadata } from 'next';
+import { DashboardView } from '@/components/dashboard/DashboardView';
 
-export { default } from '../page';
+export const metadata: Metadata = { title: 'Dashboard — Wrkld' };
 
+export default function DashboardPage() {
+  return <DashboardView />;
+}

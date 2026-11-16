@@ -1,4 +1,4 @@
-import test, { describe, it } from 'node:test';
+import { test, describe, it } from 'vitest';
 import assert from 'node:assert/strict';
 import { SLUG_REGEX, slugify } from '../components/projects/CreateProjectModal';
 import {
