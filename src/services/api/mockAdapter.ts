@@ -99,7 +99,9 @@ class MockStorageAdapter {
     const project = this.projects.find(
       (p) =>
         p.slug.toLowerCase() === slug.toLowerCase() ||
-        p.id.toLowerCase() === slug.toLowerCase()
+        p.id.toLowerCase() === slug.toLowerCase() ||
+        (slug.toLowerCase() === 'wrkld' && p.slug.toLowerCase() === 'wrkld-core') ||
+        (slug.toLowerCase() === 'wrkld-core' && p.slug.toLowerCase() === 'wrkld')
     );
     if (!project) {
       throw new Error(`Project with slug "${slug}" not found.`);
@@ -114,7 +116,9 @@ class MockStorageAdapter {
     const project = this.projects.find(
       (p) =>
         p.id.toLowerCase() === id.toLowerCase() ||
-        p.slug.toLowerCase() === id.toLowerCase()
+        p.slug.toLowerCase() === id.toLowerCase() ||
+        (id.toLowerCase() === 'wrkld' && p.slug.toLowerCase() === 'wrkld-core') ||
+        (id.toLowerCase() === 'wrkld-core' && p.slug.toLowerCase() === 'wrkld')
     );
     if (!project) {
       throw new Error(`Project with ID "${id}" not found.`);
@@ -222,7 +226,11 @@ class MockStorageAdapter {
 
     const normalized = projectSlugOrId.trim().toLowerCase();
     const project = this.projects.find(
-      (p) => p.slug.toLowerCase() === normalized || p.id.toLowerCase() === normalized
+      (p) =>
+        p.slug.toLowerCase() === normalized ||
+        p.id.toLowerCase() === normalized ||
+        (normalized === 'wrkld' && p.slug.toLowerCase() === 'wrkld-core') ||
+        (normalized === 'wrkld-core' && p.slug.toLowerCase() === 'wrkld')
     );
     const validIds = new Set<string>([normalized]);
     if (project) {
