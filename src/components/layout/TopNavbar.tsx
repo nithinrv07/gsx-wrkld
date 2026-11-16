@@ -1,8 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, Bell, Menu, ChevronDown, CheckCircle2, Sparkles } from 'lucide-react';
-import { CURRENT_USER } from '@/constants/navigation';
+import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Search, Bell, Menu, ChevronDown, Sparkles, LogOut } from 'lucide-react';
+import { useMockSession, clearMockSession } from '@/features/auth/useMockSession';
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?';
+}
 
 interface TopNavbarProps {
   onMenuToggle: () => void;
@@ -11,6 +18,35 @@ interface TopNavbarProps {
 export const TopNavbar: React.FC<TopNavbarProps> = ({ onMenuToggle }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const router = useRouter();
+  // The signed-in user comes from the session (doc 12.2: name and sign-out sit in the top bar).
+  // Today that is the Pod & Team module's mock session; Auth.js replaces it later.
+  const session = useMockSession();
+  const user = session.status === 'signed-in' ? session.user : null;
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the profile menu on Escape or a click outside it.
+  useEffect(() => {
+    if (!showUserMenu) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) setShowUserMenu(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowUserMenu(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showUserMenu]);
+
+  const signOut = () => {
+    setShowUserMenu(false);
+    clearMockSession();
+    router.push('/sign-in');
+  };
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-18 px-4 sm:px-6 lg:px-8 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
@@ -100,17 +136,19 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onMenuToggle }) => {
         </div>
 
         {/* User Profile Trigger */}
-        <div className="relative">
+        <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => {
               setShowUserMenu(!showUserMenu);
               setShowNotifications(false);
             }}
             className="flex items-center gap-2 p-1 pl-1.5 rounded-full hover:bg-slate-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 cursor-pointer"
-            aria-label="User menu"
+            aria-label={user ? `User menu for ${user.name}` : 'User menu'}
+            aria-haspopup="true"
+            aria-expanded={showUserMenu}
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5851d8] to-purple-500 text-white flex items-center justify-center font-semibold text-xs shadow-xs">
-              {CURRENT_USER.initials[0]}
+              {user ? initialsOf(user.name) : '?'}
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block mr-1" />
           </button>
@@ -118,26 +156,36 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onMenuToggle }) => {
           {/* User Menu Dropdown */}
           {showUserMenu && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 z-50 animate-scale-up">
-              <div className="px-4 py-2.5 border-b border-slate-100">
-                <p className="text-sm font-semibold text-slate-900 truncate">
-                  {CURRENT_USER.name}
-                </p>
-                <p className="text-xs text-slate-500 truncate">
-                  {CURRENT_USER.email}
-                </p>
-              </div>
-              <div className="py-1 text-sm text-slate-700">
-                <a
-                  href="/settings"
-                  className="flex items-center px-4 py-2 hover:bg-slate-50 transition-colors"
-                >
-                  Account Settings
-                </a>
-                <div className="px-4 py-2 text-xs text-slate-400 border-t border-slate-100 flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Pod: Alpha</span>
+              {user ? (
+                <>
+                  <div className="px-4 py-2.5 border-b border-slate-100">
+                    <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
+                    <p className="text-xs text-slate-600 truncate">
+                      @{user.githubHandle} · {user.globalRole}
+                    </p>
+                  </div>
+                  <div className="py-1 text-sm text-slate-700">
+                    <a href="/settings" className="flex items-center px-4 py-2 hover:bg-slate-50 transition-colors">
+                      Account Settings
+                    </a>
+                    <button
+                      type="button"
+                      onClick={signOut}
+                      className="flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2 text-left text-rose-700 hover:bg-rose-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" aria-hidden="true" />
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="px-4 py-2.5 text-sm">
+                  <p className="text-slate-700">You&apos;re not signed in.</p>
+                  <Link href="/sign-in" onClick={() => setShowUserMenu(false)} className="mt-1 inline-block font-medium text-[#5851d8] underline">
+                    Sign in
+                  </Link>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>

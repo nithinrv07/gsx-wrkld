@@ -10,6 +10,7 @@ import { useMockSession } from '@/features/auth/useMockSession';
 import { usePermissions } from '@/lib/permissions/usePermissions';
 import { Can } from '@/lib/permissions/Can';
 import { PodMember, PodRole } from '@/types/auth-pod';
+import { PodBoard } from '@/features/tickets';
 import { Users, LayoutGrid, Plus, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -182,12 +183,16 @@ function PodDetailContent({ podId }: { podId: string }) {
           canAssignLead={canAssignLead}
         />
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center space-y-3">
-          <LayoutGrid className="w-8 h-8 text-slate-500 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-300">Kanban Board Integration Point</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            This area is assigned to Person 4 (Task & Issue Management Developer) for the DnD Kanban Board (M11, M12).
-          </p>
+        // Board tab: Task & Issue Management (M11, M12, S1, S3).
+        <div className="rounded-2xl bg-[#f8f9fd] p-4 text-slate-900 sm:p-6">
+          <PodBoard
+            projectSlug={podData.projectSlug}
+            podId={podId}
+            podName={podData.name}
+            podLeadName={lead?.name ?? null}
+            members={members}
+            currentUser={currentUser}
+          />
         </div>
       )}
 
