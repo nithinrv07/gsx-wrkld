@@ -57,10 +57,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
               {title}
             </h1>
-            {badge && <div className="inline-flex">{badge}</div>}
+            {badge && <div className="inline-flex shrink-0">{badge}</div>}
           </div>
           {description && (
-            <p className="text-sm text-slate-500 max-w-2xl">{description}</p>
+            <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">{description}</p>
           )}
         </div>
 

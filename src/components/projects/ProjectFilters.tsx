@@ -45,9 +45,10 @@ export const ProjectFilters: React.FC<ProjectFiltersProps> = ({
 
   return (
     <div className="flex flex-col gap-3.5 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      {/* Row 1: Search, Reset, and View Mode Toggle */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 max-w-full sm:max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4 h-4" />
           </div>
@@ -69,8 +70,8 @@ export const ProjectFilters: React.FC<ProjectFiltersProps> = ({
           )}
         </div>
 
-        {/* View Toggle & Reset */}
-        <div className="flex items-center gap-2 justify-between md:justify-end flex-wrap">
+        {/* View Toggle & Reset Controls */}
+        <div className="flex items-center gap-2 justify-end shrink-0">
           {isFiltered && (
             <Button
               variant="ghost"
@@ -113,33 +114,34 @@ export const ProjectFilters: React.FC<ProjectFiltersProps> = ({
         </div>
       </div>
 
-      {/* Status Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 text-xs">
-        <span className="text-slate-400 font-medium shrink-0 mr-1">Status:</span>
-        {statusOptions.map((opt) => {
-          const isSelected = status === opt.value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onStatusChange(opt.value)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0 cursor-pointer ${
-                isSelected
-                  ? 'bg-[#5851d8] text-white shadow-xs'
-                  : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border border-slate-200/70'
-              }`}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
+      {/* Row 2: Status Filter Chips with wrapping & Result Counter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-slate-400 font-medium text-xs mr-1 shrink-0">Status:</span>
+          {statusOptions.map((opt) => {
+            const isSelected = status === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onStatusChange(opt.value)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
+                  isSelected
+                    ? 'bg-[#5851d8] text-white shadow-xs font-semibold'
+                    : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border border-slate-200/70'
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
 
-        <span className="ml-auto text-xs text-slate-400 shrink-0 pl-2">
+        <div className="text-xs text-slate-400 shrink-0 self-end sm:self-center">
           Showing <span className="font-semibold text-slate-700">{filteredCount}</span> of{' '}
           <span className="font-semibold text-slate-700">{totalCount}</span>
-        </span>
+        </div>
       </div>
     </div>
   );
 };
-

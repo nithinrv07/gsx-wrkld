@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -16,7 +16,7 @@ import { ProjectDetailsCard } from '@/components/projects/ProjectDetailsCard';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
 import { SprintSection } from '@/components/sprints/SprintSection';
 
-export default function ProjectDetailsPage() {
+function ProjectDetailsContent() {
   const params = useParams();
   const slug = (params?.slug as string) || '';
 
@@ -117,5 +117,27 @@ export default function ProjectDetailsPage() {
         project={project}
       />
     </div>
+  );
+}
+
+export default function ProjectDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="space-y-3 pb-6">
+            <div className="h-4 bg-slate-200 rounded-md w-48" />
+            <div className="flex justify-between items-center">
+              <div className="h-8 bg-slate-200 rounded-lg w-72" />
+              <div className="h-10 bg-slate-200 rounded-xl w-32" />
+            </div>
+          </div>
+          <div className="h-64 bg-white rounded-2xl border border-slate-200 p-6 space-y-4" />
+          <div className="h-72 bg-white rounded-2xl border border-slate-200 p-6 space-y-4" />
+        </div>
+      }
+    >
+      <ProjectDetailsContent />
+    </Suspense>
   );
 }

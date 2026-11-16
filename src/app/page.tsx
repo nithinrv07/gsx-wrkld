@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   FolderKanban,
   CheckCircle2,
@@ -9,10 +10,8 @@ import {
   Plus,
   ArrowRight,
   Sparkles,
-  ExternalLink,
   Layers,
   Trash2,
-  ShieldAlert,
 } from 'lucide-react';
 import {
   Button,
@@ -191,21 +190,21 @@ export default function HomePage() {
       {/* Top Metric Cards - Matching Wrkld Visual Reference */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1 */}
-        <Card hoverable>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-slate-500">
+        <Card hoverable className="h-full">
+          <CardContent className="p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-slate-500 truncate">
                 Total Projects
               </span>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-[#5851d8] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-[#5851d8] flex items-center justify-center shrink-0">
                 <FolderKanban className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-center justify-between gap-2 pt-1">
               <span className="text-2xl font-bold tracking-tight text-slate-900">
                 12
               </span>
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full shrink-0 whitespace-nowrap inline-flex items-center gap-0.5">
                 ↑ 12%
               </span>
             </div>
@@ -213,21 +212,21 @@ export default function HomePage() {
         </Card>
 
         {/* Metric 2 */}
-        <Card hoverable>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-slate-500">
+        <Card hoverable className="h-full">
+          <CardContent className="p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-slate-500 truncate">
                 Active Tasks
               </span>
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-center justify-between gap-2 pt-1">
               <span className="text-2xl font-bold tracking-tight text-slate-900">
                 48
               </span>
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full shrink-0 whitespace-nowrap inline-flex items-center gap-0.5">
                 ↑ 8%
               </span>
             </div>
@@ -235,28 +234,28 @@ export default function HomePage() {
         </Card>
 
         {/* Metric 3 */}
-        <Card hoverable>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-slate-500">
+        <Card hoverable className="h-full">
+          <CardContent className="p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-slate-500 truncate">
                 Your Pod
               </span>
-              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
                 <Users2 className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-bold tracking-tight text-slate-900">
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <span className="text-2xl font-bold tracking-tight text-slate-900 truncate">
                 Alpha
               </span>
-              <div className="flex -space-x-1.5 overflow-hidden">
-                <div className="w-6 h-6 rounded-full bg-[#5851d8] text-white flex items-center justify-center text-[10px] ring-2 ring-white font-medium">
+              <div className="flex items-center -space-x-1.5 overflow-hidden shrink-0 py-0.5">
+                <div className="w-6 h-6 rounded-full bg-[#5851d8] text-white flex items-center justify-center text-[10px] ring-2 ring-white font-medium shrink-0">
                   SV
                 </div>
-                <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] ring-2 ring-white font-medium">
+                <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] ring-2 ring-white font-medium shrink-0">
                   DR
                 </div>
-                <div className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-[10px] ring-2 ring-white font-medium">
+                <div className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-[10px] ring-2 ring-white font-medium shrink-0">
                   AK
                 </div>
               </div>
@@ -265,21 +264,21 @@ export default function HomePage() {
         </Card>
 
         {/* Metric 4 */}
-        <Card hoverable>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-slate-500">
+        <Card hoverable className="h-full">
+          <CardContent className="p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-slate-500 truncate">
                 On Track
               </span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-center justify-between gap-2 pt-1">
               <span className="text-2xl font-bold tracking-tight text-slate-900">
                 92%
               </span>
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full shrink-0 whitespace-nowrap inline-flex items-center gap-0.5">
                 ↑ 2%
               </span>
             </div>
@@ -289,51 +288,57 @@ export default function HomePage() {
 
       {/* Progress & Deadlines Showcase Card */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card highlight className="lg:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Sprint 2 Velocity & Pod Progress</CardTitle>
-              <StatusBadge status="on-track">78% Completed</StatusBadge>
-            </div>
-            <CardDescription>
-              Overall progress tracked across Alpha, Beta, and Gamma engineering pods.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5 pt-3">
-            <ProgressBar
-              label="Alpha Pod (Core Frontend & UI Shell)"
-              value={88}
-              showValue
-              variant="gradient"
-              size="md"
-            />
-            <ProgressBar
-              label="Beta Pod (Agile Metrics & Burndown Telemetry)"
-              value={65}
-              showValue
-              variant="brand"
-              size="md"
-            />
-            <ProgressBar
-              label="Gamma Pod (Kanban Board & Drag-and-Drop Sync)"
-              value={42}
-              showValue
-              variant="amber"
-              size="md"
-            />
-          </CardContent>
-          <CardFooter>
+        <Card highlight className="lg:col-span-2 h-full flex flex-col justify-between">
+          <div>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <CardTitle>Sprint 2 Velocity & Pod Progress</CardTitle>
+                <StatusBadge status="on-track" className="self-start sm:self-auto shrink-0">
+                  78% Completed
+                </StatusBadge>
+              </div>
+              <CardDescription>
+                Overall progress tracked across Alpha, Beta, and Gamma engineering pods.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5 pt-3">
+              <ProgressBar
+                label="Alpha Pod (Core Frontend & UI Shell)"
+                value={88}
+                showValue
+                variant="gradient"
+                size="md"
+              />
+              <ProgressBar
+                label="Beta Pod (Agile Metrics & Burndown Telemetry)"
+                value={65}
+                showValue
+                variant="brand"
+                size="md"
+              />
+              <ProgressBar
+                label="Gamma Pod (Kanban Board & Drag-and-Drop Sync)"
+                value={42}
+                showValue
+                variant="amber"
+                size="md"
+              />
+            </CardContent>
+          </div>
+          <CardFooter className="flex items-center justify-between pt-4 border-t border-slate-100">
             <span className="text-xs text-slate-500">
               Sprint 2 ends in 4 days (Aug 30)
             </span>
-            <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-              View Sprints
-            </Button>
+            <Link href="/sprints">
+              <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                View Sprints
+              </Button>
+            </Link>
           </CardFooter>
         </Card>
 
         {/* Brand Banner Card */}
-        <div className="rounded-2xl p-6 bg-gradient-to-br from-[#0e1322] via-[#141b2d] to-[#1d263e] text-white flex flex-col justify-between shadow-sm relative overflow-hidden">
+        <div className="rounded-2xl p-6 bg-gradient-to-br from-[#0e1322] via-[#141b2d] to-[#1d263e] text-white flex flex-col justify-between shadow-sm relative overflow-hidden h-full">
           <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-[#5851d8]/20 blur-2xl" />
           <div className="space-y-3 relative z-10">
             <div className="w-10 h-10 rounded-xl bg-[#5851d8] flex items-center justify-center font-bold text-lg shadow-md">
@@ -347,14 +352,16 @@ export default function HomePage() {
             </p>
           </div>
           <div className="pt-6 relative z-10">
-            <Button
-              variant="primary"
-              size="sm"
-              className="w-full bg-[#5851d8] hover:bg-[#4a43cc]"
-              rightIcon={<Sparkles className="w-3.5 h-3.5" />}
-            >
-              Explore Pod Workflows
-            </Button>
+            <Link href="/pods">
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full bg-[#5851d8] hover:bg-[#4a43cc]"
+                rightIcon={<Sparkles className="w-3.5 h-3.5" />}
+              >
+                Explore Pod Workflows
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
