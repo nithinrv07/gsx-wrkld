@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useMockSession } from '@/features/auth/useMockSession';
 import {
   FolderKanban,
   CheckCircle2,
@@ -84,6 +85,7 @@ const sampleTasks: SampleTask[] = [
 ];
 
 export default function HomePage() {
+  const session = useMockSession();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [dialogActionMessage, setDialogActionMessage] = useState<string | null>(null);
@@ -152,7 +154,7 @@ export default function HomePage() {
     <div className="space-y-8 animate-fade-in">
       {/* Page Header */}
       <PageHeader
-        title="Welcome back, Shwetha!"
+        title={session.status === 'signed-in' ? `Welcome back, ${session.user.name.split(' ')[0]}!` : 'Welcome to Wrkld'}
         description="Let's make this sprint count 🚀. Here is the Wrkld design system and application foundation."
         badge={<StatusBadge status="active">Current Sprint</StatusBadge>}
         actions={
