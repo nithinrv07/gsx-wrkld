@@ -3,15 +3,7 @@
 import React, { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {
-  LayoutDashboard,
-  FolderKanban,
-  Zap,
-  CheckSquare,
-  Users,
-  BarChart2,
-  Settings,
-} from 'lucide-react';
+import { LayoutDashboard, FolderKanban } from 'lucide-react';
 import { CURRENT_USER } from '@/constants/navigation';
 
 interface SidebarProps {
@@ -26,17 +18,15 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     if (href === '/dashboard') {
       return pathname === '/dashboard' || pathname === '/';
     }
-    return pathname?.startsWith(href) ?? false;
+    if (href === '/projects') {
+      return pathname?.startsWith('/projects') ?? false;
+    }
+    return false;
   };
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Projects', href: '/projects', icon: FolderKanban },
-    { label: 'Sprints', href: '/sprints', icon: Zap },
-    { label: 'Tasks', href: '/tasks', icon: CheckSquare },
-    { label: 'Pods', href: '/pods', icon: Users },
-    { label: 'Analytics', href: '/analytics', icon: BarChart2 },
-    { label: 'Settings', href: '/settings', icon: Settings },
   ];
 
   return (

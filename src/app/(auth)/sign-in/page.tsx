@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -62,11 +63,10 @@ export default function SignInPage() {
               {MOCK_USERS.map((user) => (
                 <label
                   key={user.id}
-                  className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                    selectedUser === user.id
+                  className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedUser === user.id
                       ? 'bg-indigo-950/40 border-indigo-500/50 text-white'
                       : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-700'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <input
