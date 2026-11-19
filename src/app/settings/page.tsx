@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Settings, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import {
   PageHeader,
   Card,

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { TopNavbar } from './TopNavbar';
 
@@ -8,8 +9,16 @@ export interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+function AppLayoutContent({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  // On sign-in / auth pages, bypass the application shell (no sidebar or top navbar)
+  const isAuthPage = pathname === '/sign-in' || pathname?.startsWith('/sign-in');
+
+  if (isAuthPage) {
+    return <main className="min-h-screen w-full">{children}</main>;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f9fd] text-slate-900 flex">
@@ -30,5 +39,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </main>
       </div>
     </div>
+  );
+}
+
+export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  return (
+    <Suspense fallback={<main className="min-h-screen w-full">{children}</main>}>
+      <AppLayoutContent>{children}</AppLayoutContent>
+    </Suspense>
   );
 };

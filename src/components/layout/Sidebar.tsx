@@ -4,6 +4,7 @@ import React, { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, FolderKanban } from 'lucide-react';
+import { CURRENT_USER } from '@/constants/navigation';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -14,8 +15,12 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   const isItemActive = (href: string) => {
-    if (href === '/dashboard' && pathname === '/dashboard') return true;
-    if (href === '/projects' && pathname?.startsWith('/projects')) return true;
+    if (href === '/dashboard') {
+      return pathname === '/dashboard' || pathname === '/';
+    }
+    if (href === '/projects') {
+      return pathname?.startsWith('/projects') ?? false;
+    }
     return false;
   };
 
@@ -41,7 +46,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <Icon className="w-4 h-4" />
+            <Icon className="w-4 h-4 shrink-0" />
             <span>{item.label}</span>
           </Link>
         );
@@ -73,9 +78,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
           </div>
         </div>
 
-        <Suspense fallback={<div className="p-4 text-xs text-slate-500">Loading navigation...</div>}>
-          <SidebarNav onNavigate={onClose} />
-        </Suspense>
+        <div className="flex-1 overflow-y-auto">
+          <Suspense fallback={<div className="p-4 text-xs text-slate-500">Loading navigation...</div>}>
+            <SidebarNav onNavigate={onClose} />
+          </Suspense>
+        </div>
+
+        {/* User Profile Footer */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/40">
+          <div className="flex items-center gap-3 p-1.5 rounded-xl">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5851d8] to-purple-400 text-white flex items-center justify-center font-semibold text-xs shrink-0 shadow-inner">
+              {CURRENT_USER.initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-white truncate">
+                {CURRENT_USER.name}
+              </p>
+              <p className="text-[11px] text-slate-400 truncate">
+                {CURRENT_USER.role}
+              </p>
+            </div>
+          </div>
+        </div>
       </aside>
     </>
   );
