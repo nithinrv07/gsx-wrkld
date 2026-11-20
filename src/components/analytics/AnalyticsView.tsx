@@ -56,7 +56,7 @@ export function AnalyticsView() {
     <PageHeader
       title="Project progress analytics"
       description="Overall and pod-wise progress with ticket counts across the lifecycle."
-      breadcrumbs={[{ label: 'Dashboard', href: dashboardRoutes.dashboard }, { label: 'Analytics' }]}
+      breadcrumbs={[{ label: 'Home', href: dashboardRoutes.dashboard }, { label: 'Analytics' }]}
       badge={
         project && (
           <StatusBadge status={PROJECT_STATUS_BADGE[project.status].status}>
@@ -135,13 +135,21 @@ export function AnalyticsView() {
             </option>
           ))}
         </select>
-        <Link
-          href={dashboardRoutes.podBoard(project.slug, pod ?? 'FE')}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5851d8] hover:underline sm:ml-auto"
-        >
-          <LayoutGrid className="h-3.5 w-3.5" />
-          {pod ? `Open ${POD_META[pod].name} pod board` : 'Open pod boards'}
-        </Link>
+        <div className="flex items-center gap-4 sm:ml-auto">
+          <Link
+            href={`/projects/${project.slug}`}
+            className="text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline"
+          >
+            View project details
+          </Link>
+          <Link
+            href={dashboardRoutes.podBoard(project.slug, pod ?? 'FE')}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5851d8] hover:underline"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            {pod ? `Open ${POD_META[pod].name} pod board` : 'Open pod boards'}
+          </Link>
+        </div>
       </div>
 
       <ProjectProgressSection

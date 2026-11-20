@@ -26,7 +26,7 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
       }
       badge={<StatusBadge status={project.status} size="md" />}
       breadcrumbs={[
-        { label: 'Home', href: '/' },
+        { label: 'Home', href: '/dashboard' },
         { label: 'Projects', href: '/projects' },
         { label: project.name },
       ]}

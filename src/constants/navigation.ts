@@ -40,7 +40,7 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const CURRENT_USER: UserProfile = {
   name: 'Shwetha V',
-  role: 'Frontend Lead',
+  role: 'Project Lead',
   initials: 'SV',
-  email: 'shwetha@wrkld.io',
+  email: 'shwetha@gsx.org',
 };

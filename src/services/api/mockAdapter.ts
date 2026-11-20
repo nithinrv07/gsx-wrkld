@@ -129,9 +129,18 @@ class MockStorageAdapter {
   async isSlugUnique(slug: string, excludeId?: string): Promise<boolean> {
     this.initFromStorage();
     const normalized = slug.trim().toLowerCase();
-    const exists = this.projects.some(
-      (p) => p.slug.toLowerCase() === normalized && p.id !== excludeId
-    );
+    const exists = this.projects.some((p) => {
+      if (p.id === excludeId) return false;
+      const existing = p.slug.toLowerCase();
+      if (existing === normalized) return true;
+      if (
+        (normalized === 'wrkld' && existing === 'wrkld-core') ||
+        (normalized === 'wrkld-core' && existing === 'wrkld')
+      ) {
+        return true;
+      }
+      return false;
+    });
     return !exists;
   }
 
@@ -182,7 +191,9 @@ class MockStorageAdapter {
     const index = this.projects.findIndex(
       (p) =>
         p.slug.toLowerCase() === slugOrId.toLowerCase() ||
-        p.id.toLowerCase() === slugOrId.toLowerCase()
+        p.id.toLowerCase() === slugOrId.toLowerCase() ||
+        (slugOrId.toLowerCase() === 'wrkld' && p.slug.toLowerCase() === 'wrkld-core') ||
+        (slugOrId.toLowerCase() === 'wrkld-core' && p.slug.toLowerCase() === 'wrkld')
     );
     if (index === -1) {
       throw new Error(`Project with identifier "${slugOrId}" not found.`);
@@ -236,6 +247,10 @@ class MockStorageAdapter {
     if (project) {
       validIds.add(project.id.toLowerCase());
       validIds.add(project.slug.toLowerCase());
+    }
+    if (normalized === 'wrkld' || normalized === 'wrkld-core') {
+      validIds.add('wrkld');
+      validIds.add('wrkld-core');
     }
 
     const sprints = this.sprints.filter(

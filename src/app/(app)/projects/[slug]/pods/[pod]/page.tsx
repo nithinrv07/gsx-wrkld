@@ -19,11 +19,16 @@ const demoteLeads = (list: PodMember[]): PodMember[] =>
     member.roleInPod === 'Pod Lead' ? { ...member, roleInPod: 'Contributor' as PodRole } : member
   );
 
-function PodDetailContent({ podId }: { podId: string }) {
+function PodDetailContent({ podId, projectSlug }: { podId: string; projectSlug?: string }) {
   const router = useRouter();
   const session = useMockSession();
   const user = session.user;
-  const podData = MOCK_PODS.find((pod) => pod.id === podId);
+  const podData = MOCK_PODS.find(
+    (pod) =>
+      pod.id.toLowerCase() === podId.toLowerCase() ||
+      pod.type.toLowerCase() === podId.toLowerCase() ||
+      `pod-${pod.type.toLowerCase()}` === podId.toLowerCase()
+  );
   const [members, setMembers] = useState<PodMember[]>(podData?.members ?? []);
   const [activeTab, setActiveTab] = useState<'board' | 'members'>('members');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -41,17 +46,17 @@ function PodDetailContent({ podId }: { podId: string }) {
   }, [session.status, router]);
 
   if (session.status !== 'signed-in' || !user) {
-    return <div className="p-6 text-slate-400">Checking your session...</div>;
+    return <div className="p-6 text-slate-500">Checking your session...</div>;
   }
 
   if (!podData) {
     return (
-      <div className="bg-slate-950 text-slate-100 rounded-2xl p-12 text-center space-y-3">
-        <h2 className="text-lg font-semibold">Pod not found</h2>
-        <p className="text-sm text-slate-400">
+      <div className="bg-white border border-slate-200/90 text-slate-900 rounded-2xl p-12 text-center space-y-3 shadow-xs">
+        <h2 className="text-lg font-semibold text-slate-900">Pod not found</h2>
+        <p className="text-sm text-slate-500">
           This pod does not exist, or you do not have access to it.
         </p>
-        <Link href="/projects" className="inline-block text-sm text-indigo-400 hover:text-indigo-300">
+        <Link href={projectSlug ? `/projects/${projectSlug}` : '/projects'} className="inline-block text-sm font-medium text-[#5851d8] hover:underline">
           Back to Projects
         </Link>
       </div>
@@ -117,15 +122,15 @@ function PodDetailContent({ podId }: { podId: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Link
-          href="/projects"
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+          href={projectSlug ? `/projects/${projectSlug}` : '/projects'}
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Project
         </Link>
-        <span className="text-xs font-mono text-indigo-400 bg-indigo-950/60 border border-indigo-800 px-3 py-1 rounded-full">
+        <span className="text-xs font-mono text-[#5851d8] bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full font-medium">
           Viewing as: {user.name} ({user.globalRole})
         </span>
       </div>
@@ -140,24 +145,24 @@ function PodDetailContent({ podId }: { podId: string }) {
         }}
       />
 
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('members')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               activeTab === 'members'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-slate-900 border border-slate-200/90 shadow-xs font-semibold'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/70'
             }`}
           >
             <Users className="w-4 h-4" /> Members ({members.length})
           </button>
           <button
             onClick={() => setActiveTab('board')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               activeTab === 'board'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-slate-900 border border-slate-200/90 shadow-xs font-semibold'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/70'
             }`}
           >
             <LayoutGrid className="w-4 h-4" /> Board
@@ -167,7 +172,7 @@ function PodDetailContent({ podId }: { podId: string }) {
         <Can action="manage_pod_members" podId={podId} currentUser={currentUser}>
           <button
             onClick={() => setIsAddDialogOpen(true)}
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 bg-[#5851d8] hover:bg-[#4a43c4] text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" /> Add Member
           </button>
@@ -184,9 +189,9 @@ function PodDetailContent({ podId }: { podId: string }) {
         />
       ) : (
         // Board tab: Task & Issue Management (M11, M12, S1, S3).
-        <div className="rounded-2xl bg-[#f8f9fd] p-4 text-slate-900 sm:p-6">
+        <div className="rounded-2xl bg-white border border-slate-200/90 p-4 text-slate-900 sm:p-6 shadow-xs">
           <PodBoard
-            projectSlug={podData.projectSlug}
+            projectSlug={projectSlug || podData.projectSlug}
             podId={podId}
             podName={podData.name}
             podLeadName={lead?.name ?? null}
@@ -208,8 +213,8 @@ function PodDetailContent({ podId }: { podId: string }) {
 }
 
 function PodDetailResolver({ params }: { params: Promise<{ slug: string; pod: string }> }) {
-  const { pod } = use(params);
-  return <PodDetailContent key={pod} podId={pod} />;
+  const { slug, pod } = use(params);
+  return <PodDetailContent key={`${slug}-${pod}`} podId={pod} projectSlug={slug} />;
 }
 
 export default function PodDetailPage({ params }: { params: Promise<{ slug: string; pod: string }> }) {

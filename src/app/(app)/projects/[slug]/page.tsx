@@ -7,6 +7,7 @@ import {
   AlertCircle,
   ArrowLeft,
   RefreshCw,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useProject } from '@/hooks/useProjects';
@@ -15,12 +16,19 @@ import { ProjectHeader } from '@/components/projects/ProjectHeader';
 import { ProjectDetailsCard } from '@/components/projects/ProjectDetailsCard';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
 import { SprintSection } from '@/components/sprints/SprintSection';
+import { ProjectProgressSection } from '@/components/analytics/ProjectProgressSection';
+import { ProjectTicketsTable } from '@/components/analytics/ProjectTicketsTable';
+import { PodList } from '@/features/pods/PodList';
+import { MOCK_PODS } from '@/lib/mocks/pod-auth.mock';
+import { matchProjectSlug } from '@/lib/dashboard/api';
+import type { TicketStatus } from '@/types/dashboard';
 
 function ProjectDetailsContent() {
   const params = useParams();
   const slug = (params?.slug as string) || '';
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<TicketStatus | undefined>();
   const { data: project, isLoading, isError, error, refetch } = useProject(slug);
   const { canEditProject } = useAuth();
 
@@ -90,21 +98,62 @@ function ProjectDetailsContent() {
       {/* 2. PROJECT DETAILS & METADATA (Module 3 Owned) */}
       <ProjectDetailsCard project={project} />
 
-      {/* =========================================================================
-          MODULE 2 INTEGRATION BOUNDARY: Overall & Pod-Wise Progress Section
-          Note: This section is owned and developed by Module 2.
-          It can be composed here by the Frontend Lead.
-         ========================================================================= */}
-      {/* <ProjectProgressSection projectId={project.id} /> */}
+      {/* 3. PROGRESS & PERFORMANCE ANALYTICS (Module 2) */}
+      <section aria-labelledby="project-progress-title" className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 id="project-progress-title" className="text-base sm:text-lg font-bold text-slate-900">
+              Progress & Performance Analytics
+            </h2>
+            <p className="text-xs text-slate-500">
+              Overall milestone completion, pod velocity, and ticket lifecycle distribution.
+            </p>
+          </div>
+          <Link
+            href={`/analytics?project=${project.slug}`}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5851d8] hover:text-[#4a43c4] hover:underline"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span>Open in Global Analytics</span>
+          </Link>
+        </div>
+        <ProjectProgressSection
+          slug={project.slug}
+          selectedStatus={selectedStatus}
+          onSelectStatus={setSelectedStatus}
+          hrefForPod={(podCode) => `/projects/${project.slug}/pods/pod-${podCode.toLowerCase()}`}
+        />
+        <ProjectTicketsTable
+          slug={project.slug}
+          status={selectedStatus}
+          onStatusChange={setSelectedStatus}
+        />
+      </section>
 
-      {/* =========================================================================
-          MODULE 5 INTEGRATION BOUNDARY: Pods & Pod Lead Section
-          Note: This section is owned and developed by Module 5.
-          It can be composed here by the Frontend Lead.
-         ========================================================================= */}
-      {/* <ProjectPodsSection projectId={project.id} /> */}
+      {/* 4. DOMAIN PODS (Module 5) */}
+      <section aria-labelledby="project-pods-title" className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 id="project-pods-title" className="text-base sm:text-lg font-bold text-slate-900">
+              Domain Pods
+            </h2>
+            <p className="text-xs text-slate-500">
+              Cross-functional engineering pods executing sprint deliverables for this project.
+            </p>
+          </div>
+          {MOCK_PODS.filter((p) => matchProjectSlug(p.projectSlug, project.slug)).length > 0 && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-[#5851d8] border border-indigo-100">
+              {MOCK_PODS.filter((p) => matchProjectSlug(p.projectSlug, project.slug)).length} Pods
+            </span>
+          )}
+        </div>
+        <PodList
+          pods={MOCK_PODS.filter((p) => matchProjectSlug(p.projectSlug, project.slug))}
+          projectSlug={project.slug}
+        />
+      </section>
 
-      {/* 3. SPRINT SECTION (Module 3 Owned) */}
+      {/* 5. SPRINT SECTION (Module 3 Owned) */}
       <SprintSection
         projectSlug={project.slug}
         projectName={project.name}

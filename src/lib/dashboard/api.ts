@@ -9,9 +9,13 @@
  *   ?mock=empty          the user has no projects, tickets or blockers
  *   ?mock=slow           3s latency to inspect loading skeletons
  */
-import { DashboardSummary, ProjectAnalytics, ProjectSummary, Ticket, Viewer } from '@/types/dashboard';
-import { OVERALL_PROGRESS, PROJECT_RECORDS, TICKETS, projectStatusCounts } from '@/mocks/dashboard-data';
+import { DashboardSummary, ProjectAnalytics, ProjectSummary, StatusCounts, Ticket, Viewer } from '@/types/dashboard';
+import { OVERALL_PROGRESS, PROJECT_RECORDS, projectStatusCounts } from '@/mocks/dashboard-data';
 import { can } from './permissions';
+import { mockStorageAdapter } from '@/services/api/mockAdapter';
+import { getUnifiedDashboardTickets, matchProjectSlug } from '@/features/tickets/lib/ticketAdapter';
+
+export { matchProjectSlug };
 
 export class ApiError extends Error {
   constructor(message: string, public status = 500) {
@@ -44,9 +48,10 @@ const isMine = (viewer: Viewer) => (t: Ticket) => t.assignee?.id === viewer.id;
 
 export async function fetchDashboardSummary(viewer: Viewer): Promise<DashboardSummary> {
   const { empty } = await simulate('summary');
+  const allTickets = getUnifiedDashboardTickets();
   const projects = empty ? [] : visibleProjects(viewer);
   const slugs = new Set(projects.map((p) => p.slug));
-  const mine = empty ? [] : TICKETS.filter(isMine(viewer));
+  const mine = empty ? [] : allTickets.filter(isMine(viewer));
   const inScope = (t: Ticket) => !empty && slugs.has(t.projectSlug);
 
   const summaries: ProjectSummary[] = projects.map((p) => ({
@@ -55,7 +60,7 @@ export async function fetchDashboardSummary(viewer: Viewer): Promise<DashboardSu
     status: p.status,
     progress: p.progress,
     lead: p.lead,
-    myTicketCount: mine.filter((t) => t.projectSlug === p.slug && isOpen(t)).length,
+    myTicketCount: mine.filter((t) => matchProjectSlug(t.projectSlug, p.slug) && isOpen(t)).length,
   }));
 
   return {
@@ -67,10 +72,10 @@ export async function fetchDashboardSummary(viewer: Viewer): Promise<DashboardSu
     stats: {
       projects: summaries.length,
       assignedTickets: mine.filter(isOpen).length,
-      openBlockers: TICKETS.filter((t) => inScope(t) && t.type === 'blocker' && isOpen(t)).length,
+      openBlockers: allTickets.filter((t) => inScope(t) && t.type === 'blocker' && isOpen(t)).length,
       // Pod Leads see their own pod's review queue; Project Leads and above see all pods.
       awaitingReview: can(viewer.role, 'tickets:view-review-queue')
-        ? TICKETS.filter(
+        ? allTickets.filter(
             (t) =>
               inScope(t) &&
               t.status === 'pr-review' &&
@@ -85,7 +90,8 @@ export async function fetchDashboardSummary(viewer: Viewer): Promise<DashboardSu
 export async function fetchMyTickets(viewer: Viewer): Promise<Ticket[]> {
   const { empty } = await simulate('tickets');
   if (empty) return [];
-  return TICKETS.filter(isMine(viewer)).sort((a, b) =>
+  const allTickets = getUnifiedDashboardTickets();
+  return allTickets.filter(isMine(viewer)).sort((a, b) =>
     b.updatedAt.localeCompare(a.updatedAt)
   );
 }
@@ -94,27 +100,102 @@ export async function fetchMyTickets(viewer: Viewer): Promise<Ticket[]> {
 export async function fetchOpenBlockers(viewer: Viewer): Promise<Ticket[]> {
   const { empty } = await simulate('alerts');
   if (empty) return [];
+  const allTickets = getUnifiedDashboardTickets();
   const slugs = new Set(visibleProjects(viewer).map((p) => p.slug));
-  return TICKETS.filter((t) => t.type === 'blocker' && isOpen(t) && slugs.has(t.projectSlug)).sort((a, b) =>
+  return allTickets.filter((t) => t.type === 'blocker' && isOpen(t) && slugs.has(t.projectSlug)).sort((a, b) =>
     b.updatedAt.localeCompare(a.updatedAt)
   );
 }
 
+function toDashboardProjectStatus(status: string): import('@/types/dashboard').ProjectStatus {
+  if (status === 'on-track') return 'active';
+  if (status === 'completed' || status === 'blocked' || status === 'in-progress' || status === 'planning') {
+    return status;
+  }
+  return 'active';
+}
+
 export async function fetchProjectAnalytics(slug: string, viewer: Viewer): Promise<ProjectAnalytics> {
   const { empty } = await simulate('analytics');
-  const record = visibleProjects(viewer).find((p) => p.slug === slug);
+  const allTickets = getUnifiedDashboardTickets();
+  let record = visibleProjects(viewer).find((p) => matchProjectSlug(p.slug, slug));
+  if (!record && !empty) {
+    try {
+      const proj = await mockStorageAdapter.getProjectBySlug(slug);
+      if (proj) {
+        record = {
+          slug: proj.slug,
+          name: proj.name,
+          status: toDashboardProjectStatus(proj.status),
+          progress: 0,
+          lead: { id: 'lead', name: proj.projectLead.name, initials: proj.projectLead.initials },
+          memberIds: [viewer.id],
+          pods: [
+            { pod: 'FE', progress: 0, statusCounts: { backlog: 0, todo: 0, 'in-progress': 0, 'pr-review': 0, 'pod-lead-approved': 0, 'ready-for-integration': 0, 'integration-verified': 0, done: 0 } },
+            { pod: 'BE', progress: 0, statusCounts: { backlog: 0, todo: 0, 'in-progress': 0, 'pr-review': 0, 'pod-lead-approved': 0, 'ready-for-integration': 0, 'integration-verified': 0, done: 0 } },
+            { pod: 'INT', progress: 0, statusCounts: { backlog: 0, todo: 0, 'in-progress': 0, 'pr-review': 0, 'pod-lead-approved': 0, 'ready-for-integration': 0, 'integration-verified': 0, done: 0 } },
+            { pod: 'QA', progress: 0, statusCounts: { backlog: 0, todo: 0, 'in-progress': 0, 'pr-review': 0, 'pod-lead-approved': 0, 'ready-for-integration': 0, 'integration-verified': 0, done: 0 } },
+          ],
+        };
+      }
+    } catch {
+      // Not found in storage adapter either
+    }
+  }
   if (empty || !record) throw new ApiError('Project not found or you do not have access to it.', 404);
   const { memberIds: _members, ...rest } = record;
   void _members;
+
+  const projectTickets = allTickets.filter((t) => matchProjectSlug(t.projectSlug, slug));
+  const updatedPods = rest.pods.map((p) => {
+    const podTickets = projectTickets.filter((t) => t.pod === p.pod);
+    if (podTickets.length === 0) return p;
+    const podCounts: StatusCounts = {
+      backlog: 0,
+      todo: 0,
+      'in-progress': 0,
+      'pr-review': 0,
+      'pod-lead-approved': 0,
+      'ready-for-integration': 0,
+      'integration-verified': 0,
+      done: 0,
+    };
+    for (const t of podTickets) {
+      if (podCounts[t.status] !== undefined) podCounts[t.status]++;
+    }
+    return {
+      ...p,
+      statusCounts: podCounts,
+    };
+  });
+
+  const computedStatusCounts: StatusCounts = projectTickets.length > 0
+    ? updatedPods.reduce((acc, p) => {
+        (Object.keys(acc) as (keyof StatusCounts)[]).forEach((k) => (acc[k] += p.statusCounts[k]));
+        return acc;
+      }, {
+        backlog: 0,
+        todo: 0,
+        'in-progress': 0,
+        'pr-review': 0,
+        'pod-lead-approved': 0,
+        'ready-for-integration': 0,
+        'integration-verified': 0,
+        done: 0,
+      })
+    : projectStatusCounts(record);
+
   return {
     ...rest,
-    statusCounts: projectStatusCounts(record),
-    myTicketCount: TICKETS.filter((t) => t.projectSlug === slug && isMine(viewer)(t) && isOpen(t)).length,
+    pods: updatedPods,
+    statusCounts: computedStatusCounts,
+    myTicketCount: allTickets.filter((t) => matchProjectSlug(t.projectSlug, slug) && isMine(viewer)(t) && isOpen(t)).length,
   };
 }
 
 export async function fetchProjectTickets(slug: string, viewer: Viewer): Promise<Ticket[]> {
   await simulate('analytics');
-  if (!visibleProjects(viewer).some((p) => p.slug === slug)) return [];
-  return TICKETS.filter((t) => t.projectSlug === slug);
+  if (!visibleProjects(viewer).some((p) => matchProjectSlug(p.slug, slug))) return [];
+  const allTickets = getUnifiedDashboardTickets();
+  return allTickets.filter((t) => matchProjectSlug(t.projectSlug, slug));
 }

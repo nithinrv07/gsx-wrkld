@@ -41,7 +41,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
   const markAll = () => onReadKeysChange(Array.from(new Set([...readKeys, ...list.map((b) => b.key)])));
 
   return (
-    <Card id="alerts" className="scroll-mt-24">
+    <Card id="alerts" className="scroll-mt-24 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
       <PanelHeader
         title="Alerts"
         subtitle="Open blocker flags in your projects"

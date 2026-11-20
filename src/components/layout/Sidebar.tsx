@@ -1,10 +1,35 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, FolderKanban } from 'lucide-react';
+import {
+  LayoutDashboard,
+  FolderKanban,
+  Users2,
+  Zap,
+  KanbanSquare,
+  BarChart3,
+  Settings,
+  LogOut,
+} from 'lucide-react';
 import { CURRENT_USER } from '@/constants/navigation';
+import { useMockSession, clearMockSession } from '@/features/auth/useMockSession';
+import { useAuth } from '@/lib/auth/rbac';
+
+function titleCase(s: string): string {
+  if (!s) return '';
+  return s
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => (w.length > 1 ? w[0].toUpperCase() + w.slice(1) : w.toUpperCase()))
+    .join(' ');
+}
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?';
+}
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -13,89 +38,199 @@ interface SidebarProps {
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isItemActive = (href: string) => {
     if (href === '/dashboard') {
       return pathname === '/dashboard' || pathname === '/';
     }
     if (href === '/projects') {
-      return pathname?.startsWith('/projects') ?? false;
+      return pathname === '/projects' || (pathname?.startsWith('/projects/') && !pathname?.includes('/pods/'));
     }
-    return false;
+    if (href === '/pods') {
+      return pathname?.startsWith('/pods') || pathname?.includes('/pods/');
+    }
+    if (href === '/sprints') {
+      return pathname?.startsWith('/sprints');
+    }
+    if (href === '/tasks') {
+      return pathname?.startsWith('/tasks');
+    }
+    if (href === '/analytics') {
+      return pathname?.startsWith('/analytics') ?? false;
+    }
+    if (href === '/settings') {
+      return pathname?.startsWith('/settings') ?? false;
+    }
+    return pathname === href;
   };
 
-  const navItems = [
+  const mainMenu = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Projects', href: '/projects', icon: FolderKanban },
+    { label: 'Pods', href: '/pods', icon: Users2 },
+    { label: 'Sprints', href: '/sprints', icon: Zap },
+    { label: 'Kanban / Tasks', href: '/tasks', icon: KanbanSquare },
+    { label: 'Analytics', href: '/analytics', icon: BarChart3 },
   ];
 
+  const generalMenu = [
+    { label: 'Settings', href: '/settings', icon: Settings },
+  ];
+
+  const handleSignOut = () => {
+    clearMockSession();
+    router.push('/sign-in');
+  };
+
   return (
-    <nav className="space-y-1 px-2 py-4">
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const active = isItemActive(item.href);
-        return (
+    <div className="flex flex-col justify-between h-full px-3 py-4">
+      <div className="space-y-6">
+        {/* Main Menu Section */}
+        <div>
+          <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Main Menu
+          </p>
+          <nav className="space-y-1">
+            {mainMenu.map((item) => {
+              const Icon = item.icon;
+              const active = isItemActive(item.href);
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={onNavigate}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    active
+                      ? 'bg-blue-50 text-blue-600 font-semibold shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* General Section */}
+        <div>
+          <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            General
+          </p>
+          <nav className="space-y-1">
+            {generalMenu.map((item) => {
+              const Icon = item.icon;
+              const active = isItemActive(item.href);
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={onNavigate}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                    active
+                      ? 'bg-blue-50 text-blue-600 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0 text-slate-400" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 shrink-0 text-slate-400 hover:text-rose-600" />
+              <span>Logout</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Sprint 2 Card matching Screenshot */}
+      <div className="pt-4">
+        <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-4 text-white shadow-md">
+          <p className="text-sm font-bold">Sprint 2</p>
+          <p className="text-[11px] text-blue-100 mt-0.5 mb-3">Active — 4 Days Left</p>
           <Link
-            key={item.href}
-            href={item.href}
+            href="/sprints"
             onClick={onNavigate}
-            aria-current={active ? 'page' : undefined}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              active
-                ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
+            className="block w-full py-1.5 px-3 bg-white text-blue-600 text-xs font-semibold text-center rounded-xl shadow-xs hover:bg-blue-50 transition-colors"
           >
-            <Icon className="w-4 h-4 shrink-0" />
-            <span>{item.label}</span>
+            View Sprint
           </Link>
-        );
-      })}
-    </nav>
+        </div>
+      </div>
+    </div>
   );
 }
 
-// Fixed to the left edge on large screens (AppLayout reserves the space with lg:pl-64),
-// and a slide-in drawer on small screens, as in the Frontend Lead's original shell.
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
+  const auth = useAuth();
+  const session = useMockSession();
+  const sessionUser = session.status === 'signed-in' ? session.user : null;
+
+  // Derive name, role and initials from canonical useMockSession(), falling back to auth context or CURRENT_USER
+  const rawName = sessionUser?.name || auth.user?.name || CURRENT_USER.name;
+  const name = titleCase(rawName);
+  const role =
+    (auth.user && auth.user.role && auth.user.name === rawName ? auth.user.role : null) ||
+    sessionUser?.globalRole ||
+    CURRENT_USER.role;
+  const initials = initialsOf(name);
+
+  const user = {
+    name,
+    role,
+    initials,
+  };
+
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 z-40 bg-slate-950/60 lg:hidden" onClick={onClose} aria-hidden="true" />
+        <div className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden backdrop-blur-xs" onClick={onClose} aria-hidden="true" />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-800 bg-slate-900 transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200/90 bg-white transition-transform duration-300 lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-4 border-b border-slate-800 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-sm">
+        {/* Brand Logo Header matching screenshot */}
+        <div className="p-4 px-5 border-b border-slate-100 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#5851d8] to-blue-600 flex items-center justify-center font-extrabold text-white text-lg shadow-sm">
             W
           </div>
           <div>
-            <h1 className="font-bold text-white text-base leading-none">Wrkld</h1>
-            <span className="text-[10px] text-slate-500 font-mono">GSX Community</span>
+            <h1 className="font-bold text-slate-900 text-base leading-tight">Wrkld</h1>
+            <span className="text-[11px] text-slate-400 font-medium">Pod Agile</span>
           </div>
         </div>
 
+        {/* Navigation Area */}
         <div className="flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="p-4 text-xs text-slate-500">Loading navigation...</div>}>
+          <Suspense fallback={<div className="p-4 text-xs text-slate-400">Loading navigation...</div>}>
             <SidebarNav onNavigate={onClose} />
           </Suspense>
         </div>
 
         {/* User Profile Footer */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/40">
+        <div className="p-3 border-t border-slate-100 bg-slate-50/60">
           <div className="flex items-center gap-3 p-1.5 rounded-xl">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5851d8] to-purple-400 text-white flex items-center justify-center font-semibold text-xs shrink-0 shadow-inner">
-              {CURRENT_USER.initials}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5851d8] to-blue-500 text-white flex items-center justify-center font-semibold text-xs shrink-0 shadow-xs">
+              {user.initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-white truncate">
-                {CURRENT_USER.name}
+              <p className="text-xs font-semibold text-slate-900 truncate">
+                {user.name}
               </p>
-              <p className="text-[11px] text-slate-400 truncate">
-                {CURRENT_USER.role}
+              <p className="text-[11px] text-slate-500 truncate">
+                {user.role}
               </p>
             </div>
           </div>

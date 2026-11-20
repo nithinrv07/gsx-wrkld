@@ -35,6 +35,7 @@ export function useCreateProject() {
     onSuccess: (newProject) => {
       // Invalidate project lists so new project appears immediately
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       // Pre-seed the cache for this new project
       queryClient.setQueryData(projectKeys.detail(newProject.slug), newProject);
     },
@@ -51,6 +52,7 @@ export function useUpdateProject(slug: string) {
       queryClient.setQueryData(projectKeys.detail(slug), updatedProject);
       // Invalidate all project lists to update listings
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }

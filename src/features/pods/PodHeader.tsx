@@ -9,40 +9,40 @@ interface PodHeaderProps {
 }
 
 const POD_TYPE_COLORS: Record<string, string> = {
-  FE: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  BE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-  INT: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-  QA: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+  FE: 'bg-blue-50 text-blue-700 border-blue-200',
+  BE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  INT: 'bg-purple-50 text-purple-700 border-purple-200',
+  QA: 'bg-amber-50 text-amber-700 border-amber-200',
 };
 
 export const PodHeader: React.FC<PodHeaderProps> = ({ pod }) => {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-md space-y-4">
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span
-            className={`px-3 py-1 rounded-md text-xs font-semibold border ${
-              POD_TYPE_COLORS[pod.type] || 'bg-slate-800 text-slate-300'
+            className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
+              POD_TYPE_COLORS[pod.type] || 'bg-slate-100 text-slate-700 border-slate-200'
             }`}
           >
             {pod.type} Pod
           </span>
-          <h2 className="text-xl font-bold text-white tracking-tight">{pod.name}</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">{pod.name}</h2>
         </div>
 
         <div className="flex items-center gap-6 text-sm">
-          <div className="flex items-center gap-2 text-slate-400">
-            <UserCheck className="w-4 h-4 text-indigo-400" />
+          <div className="flex items-center gap-2 text-slate-500">
+            <UserCheck className="w-4 h-4 text-[#5851d8]" />
             <span>Lead:</span>
-            <span className="text-slate-200 font-medium">
+            <span className="text-slate-900 font-semibold">
               {pod.leadName || 'Unassigned'}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2 text-slate-500">
             <Users className="w-4 h-4 text-slate-400" />
             <span>Members:</span>
-            <span className="text-slate-200 font-medium">{pod.memberCount}</span>
+            <span className="text-slate-900 font-semibold">{pod.memberCount}</span>
           </div>
         </div>
       </div>

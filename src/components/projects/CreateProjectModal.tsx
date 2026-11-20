@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { X, FolderPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { ProjectStatus } from '@/types';
 import { Button } from '@/components/ui';
@@ -34,25 +37,64 @@ export function slugify(text: string): string {
 
 export const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+export const createProjectSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Project name is required.')
+    .min(3, 'Project name must be at least 3 characters.'),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, 'Project slug is required.')
+    .regex(
+      SLUG_REGEX,
+      'Slug can only contain lowercase letters, numbers, and hyphens (e.g. mobile-app).'
+    ),
+  targetDate: z
+    .string()
+    .min(1, 'Target completion date is required.')
+    .refine((val) => !isNaN(new Date(val).getTime()), 'Please select a valid date.'),
+  status: z.enum(['planning', 'active', 'in-progress', 'on-track', 'completed', 'blocked'] as const),
+  projectLeadIndex: z.number().int().min(0),
+  description: z.string().optional(),
+});
+
+export type CreateProjectFormData = z.infer<typeof createProjectSchema>;
+
 interface FormProps {
   onClose: () => void;
   onCreated?: (slug: string) => void;
 }
 
 const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
-  const [description, setDescription] = useState('');
-  const [targetDate, setTargetDate] = useState('');
-  const [projectLeadIndex, setProjectLeadIndex] = useState(0);
-  const [status, setStatus] = useState<ProjectStatus>('planning');
-
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const createMutation = useCreateProject();
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    setError,
+    formState: { errors },
+  } = useForm<CreateProjectFormData>({
+    resolver: zodResolver(createProjectSchema),
+    defaultValues: {
+      name: '',
+      slug: '',
+      targetDate: '',
+      status: 'planning',
+      projectLeadIndex: 0,
+      description: '',
+    },
+  });
+
+  const nameRegister = register('name');
+  const slugRegister = register('slug');
 
   // Handle ESC key
   useEffect(() => {
@@ -65,83 +107,46 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, createMutation.isPending]);
 
-  // Auto-generate slug when name changes, unless manually edited
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    setName(newName);
+    nameRegister.onChange(e);
     if (!isSlugManuallyEdited) {
-      setSlug(slugify(newName));
-    }
-    if (errors.name) {
-      setErrors((prev) => ({ ...prev, name: '' }));
+      setValue('slug', slugify(e.target.value), { shouldValidate: true });
     }
   };
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsSlugManuallyEdited(true);
-    setSlug(e.target.value.toLowerCase());
-    if (errors.slug) {
-      setErrors((prev) => ({ ...prev, slug: '' }));
-    }
+    slugRegister.onChange(e);
   };
 
-  const validateForm = async (): Promise<boolean> => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!name.trim()) {
-      newErrors.name = 'Project name is required.';
-    } else if (name.trim().length < 3) {
-      newErrors.name = 'Project name must be at least 3 characters.';
-    }
-
-    const cleanSlug = slug.trim().toLowerCase();
-    if (!cleanSlug) {
-      newErrors.slug = 'Project slug is required.';
-    } else if (!SLUG_REGEX.test(cleanSlug)) {
-      newErrors.slug =
-        'Slug can only contain lowercase letters, numbers, and hyphens (e.g. mobile-app).';
-    } else {
-      // Check slug uniqueness
-      const isUnique = await projectsApi.isSlugUnique(cleanSlug);
-      if (!isUnique) {
-        newErrors.slug = `Slug "${cleanSlug}" is already in use. Please choose another.`;
-      }
-    }
-
-    if (!targetDate) {
-      newErrors.targetDate = 'Target completion date is required.';
-    } else {
-      const parsed = new Date(targetDate);
-      if (isNaN(parsed.getTime())) {
-        newErrors.targetDate = 'Please select a valid date.';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: CreateProjectFormData) => {
     setApiError(null);
 
-    const isValid = await validateForm();
-    if (!isValid) return;
+    // Check slug uniqueness
+    const cleanSlug = data.slug.trim().toLowerCase();
+    const isUnique = await projectsApi.isSlugUnique(cleanSlug);
+    if (!isUnique) {
+      setError('slug', {
+        type: 'manual',
+        message: `Slug "${cleanSlug}" is already in use. Please choose another.`,
+      });
+      return;
+    }
 
-    const lead = AVAILABLE_PROJECT_LEADS[projectLeadIndex] || AVAILABLE_PROJECT_LEADS[0];
+    const lead = AVAILABLE_PROJECT_LEADS[data.projectLeadIndex] || AVAILABLE_PROJECT_LEADS[0];
 
     try {
       const created = await createMutation.mutateAsync({
-        name: name.trim(),
-        slug: slug.trim().toLowerCase(),
-        description: description.trim() || undefined,
-        status,
+        name: data.name.trim(),
+        slug: cleanSlug,
+        description: data.description?.trim() || undefined,
+        status: data.status as ProjectStatus,
         projectLead: {
           name: lead.name,
           email: lead.email,
           initials: lead.initials,
         },
-        targetDate,
+        targetDate: data.targetDate,
       });
 
       setSuccessMessage(`Project "${created.name}" created successfully!`);
@@ -188,7 +193,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
       </div>
 
       {/* Form Body */}
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
         {apiError && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -215,7 +220,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
           <input
             id="project-name"
             type="text"
-            value={name}
+            {...nameRegister}
             onChange={handleNameChange}
             placeholder="Enter project name"
             className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white transition-all outline-none ${
@@ -225,7 +230,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
             }`}
           />
           {errors.name && (
-            <p className="text-xs text-rose-600 font-medium">{errors.name}</p>
+            <p className="text-xs text-rose-600 font-medium">{errors.name.message}</p>
           )}
         </div>
 
@@ -245,7 +250,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
             <input
               id="project-slug"
               type="text"
-              value={slug}
+              {...slugRegister}
               onChange={handleSlugChange}
               placeholder="project-slug"
               className={`w-full pl-22 pr-3.5 py-2 text-sm font-mono bg-slate-50 border rounded-xl focus:bg-white transition-all outline-none ${
@@ -256,7 +261,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
             />
           </div>
           {errors.slug && (
-            <p className="text-xs text-rose-600 font-medium">{errors.slug}</p>
+            <p className="text-xs text-rose-600 font-medium">{errors.slug.message}</p>
           )}
         </div>
 
@@ -272,13 +277,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
             <input
               id="target-date"
               type="date"
-              value={targetDate}
-              onChange={(e) => {
-                setTargetDate(e.target.value);
-                if (errors.targetDate) {
-                  setErrors((prev) => ({ ...prev, targetDate: '' }));
-                }
-              }}
+              {...register('targetDate')}
               className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white transition-all outline-none ${
                 errors.targetDate
                   ? 'border-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/15'
@@ -287,7 +286,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
             />
             {errors.targetDate && (
               <p className="text-xs text-rose-600 font-medium">
-                {errors.targetDate}
+                {errors.targetDate.message}
               </p>
             )}
           </div>
@@ -301,8 +300,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
             </label>
             <select
               id="project-status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+              {...register('status')}
               className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#5851d8] focus:ring-2 focus:ring-[#5851d8]/15 outline-none transition-all cursor-pointer"
             >
               <option value="planning">Planning</option>
@@ -323,8 +321,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
           </label>
           <select
             id="project-lead"
-            value={projectLeadIndex}
-            onChange={(e) => setProjectLeadIndex(Number(e.target.value))}
+            {...register('projectLeadIndex', { valueAsNumber: true })}
             className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#5851d8] focus:ring-2 focus:ring-[#5851d8]/15 outline-none transition-all cursor-pointer"
           >
             {AVAILABLE_PROJECT_LEADS.map((lead, idx) => (
@@ -346,8 +343,7 @@ const CreateProjectForm: React.FC<FormProps> = ({ onClose, onCreated }) => {
           <textarea
             id="project-description"
             rows={2}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            {...register('description')}
             placeholder="Brief summary of project objectives and scope..."
             className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#5851d8] focus:ring-2 focus:ring-[#5851d8]/15 outline-none transition-all resize-none"
           />

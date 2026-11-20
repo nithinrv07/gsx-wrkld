@@ -49,7 +49,10 @@ export function useCreateTicket(projectSlug: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateTicketInput) => ticketsApi.createTicket(projectSlug, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ticketKeys.project(projectSlug) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ticketKeys.project(projectSlug) });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 
@@ -58,7 +61,10 @@ export function useUpdateTicket(projectSlug: string) {
   return useMutation({
     mutationFn: ({ key, input }: { key: string; input: UpdateTicketInput }) =>
       ticketsApi.updateTicket(projectSlug, key, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ticketKeys.project(projectSlug) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ticketKeys.project(projectSlug) });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 
@@ -83,7 +89,10 @@ export function useMoveTicket(projectSlug: string) {
     onError: (_error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: key });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 

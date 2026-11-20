@@ -7,3 +7,4 @@ export * from './EmptyState';
 export * from './DataTable';
 export * from './ConfirmDialog';
 export * from './PodBadge';
+export * from './input';

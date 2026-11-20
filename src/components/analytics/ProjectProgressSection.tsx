@@ -6,7 +6,6 @@ import { POD_META } from '@/lib/dashboard/meta';
 import { can } from '@/lib/dashboard/permissions';
 import { useProjectAnalytics } from '@/lib/dashboard/queries';
 import { useViewer } from '@/lib/dashboard/viewer';
-import { DashboardProviders } from '@/components/dashboard/DashboardProviders';
 import { PanelError, SkeletonBlock } from '@/components/dashboard/primitives';
 import { Card } from '@/components/ui';
 import { RollUpProgress } from './RollUpProgress';
@@ -85,9 +84,7 @@ export const ProjectProgressSection: React.FC<ProjectProgressSectionProps> = ({
   );
 };
 
-/** Drop-in version that brings its own query provider (e.g. for the Projects page). */
+/** Drop-in version for standalone project progress (uses the shared root QueryProvider). */
 export const StandaloneProjectProgress: React.FC<ProjectProgressSectionProps> = (props) => (
-  <DashboardProviders>
-    <ProjectProgressSection {...props} />
-  </DashboardProviders>
+  <ProjectProgressSection {...props} />
 );

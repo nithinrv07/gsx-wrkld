@@ -3,13 +3,13 @@
 // KanbanBoard and KanbanColumn (doc 9.3). Pod-scoped board with DnD Kit (doc 7.6).
 // Columns follow the eight lifecycle states. The two states that need the Pod Lead's
 // sign-off are grouped inside one dashed, locked zone.
+// Integrated with @dnd-kit/sortable for smooth sortable list drag-and-drop.
 
 import React, { useState } from 'react';
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  useDraggable,
   useDroppable,
   useSensor,
   useSensors,
@@ -17,6 +17,12 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Lock } from 'lucide-react';
 import { TICKET_STATUSES, type TicketStatusDefinition } from '@/constants/ticket-lifecycle';
 import type { Ticket, TicketStatus } from '@/types/ticket';
@@ -50,9 +56,24 @@ export function KanbanBoard({ tickets, permissions, assigneeName, openKey, onOpe
   const onDragEnd = (event: DragEndEvent) => {
     setActiveKey(null);
     const target = event.over?.id;
+    if (!target) return;
     const ticket = tickets.find((t) => t.key === event.active.id);
-    if (!ticket || !target || target === ticket.status) return;
-    onMove(ticket.key, target as TicketStatus);
+    if (!ticket) return;
+
+    // target might be a column status (e.g. 'todo', 'in_progress') OR another ticket's key (when sorting within or into a column)
+    let targetStatus: TicketStatus | undefined;
+    const isColumnStatus = TICKET_STATUSES.some((s) => s.id === target);
+    if (isColumnStatus) {
+      targetStatus = target as TicketStatus;
+    } else {
+      const overTicket = tickets.find((t) => t.key === target);
+      if (overTicket) {
+        targetStatus = overTicket.status;
+      }
+    }
+
+    if (!targetStatus || targetStatus === ticket.status) return;
+    onMove(ticket.key, targetStatus);
   };
 
   const columnProps = {
@@ -189,38 +210,54 @@ export function KanbanColumn({
         </p>
       )}
 
-      <div className="flex min-h-24 flex-col gap-2">
-        {tickets.map((ticket) => (
-          <DraggableTicket
-            key={ticket.key}
-            ticket={ticket}
-            hidden={activeKey === ticket.key}
-            assigneeName={assigneeName(ticket.assigneeId)}
-            permissions={permissions}
-            isOpen={openKey === ticket.key}
-            menuOpen={menuFor === ticket.key}
-            onMenuOpenChange={(open) => setMenuFor(open ? ticket.key : null)}
-            onOpen={() => onOpen(ticket.key)}
-            onMove={(next) => onMove(ticket.key, next)}
-            onApprove={() => onApprove(ticket.key)}
-          />
-        ))}
-        {tickets.length === 0 && (
-          <p className="rounded-lg border border-dashed border-slate-300 px-2 py-3.5 text-center text-xs text-slate-600">No tickets</p>
-        )}
-      </div>
+      <SortableContext items={tickets.map((t) => t.key)} strategy={verticalListSortingStrategy}>
+        <div className="flex min-h-24 flex-col gap-2">
+          {tickets.map((ticket) => (
+            <SortableTicket
+              key={ticket.key}
+              ticket={ticket}
+              hidden={activeKey === ticket.key}
+              assigneeName={assigneeName(ticket.assigneeId)}
+              permissions={permissions}
+              isOpen={openKey === ticket.key}
+              menuOpen={menuFor === ticket.key}
+              onMenuOpenChange={(open) => setMenuFor(open ? ticket.key : null)}
+              onOpen={() => onOpen(ticket.key)}
+              onMove={(next) => onMove(ticket.key, next)}
+              onApprove={() => onApprove(ticket.key)}
+            />
+          ))}
+          {tickets.length === 0 && (
+            <p className="rounded-lg border border-dashed border-slate-300 px-2 py-3.5 text-center text-xs text-slate-600">No tickets</p>
+          )}
+        </div>
+      </SortableContext>
     </section>
   );
 }
 
-function DraggableTicket({
+function SortableTicket({
   hidden,
   ...cardProps
 }: React.ComponentProps<typeof TicketCard> & { hidden: boolean }) {
-  const { setNodeRef, listeners } = useDraggable({ id: cardProps.ticket.key });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: cardProps.ticket.key,
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
   // Only pointer listeners are attached. Keyboard users move tickets with the "Move to" menu (doc 10.4).
   return (
-    <div ref={setNodeRef} {...listeners} className={`cursor-grab touch-none ${hidden ? 'opacity-40' : ''}`}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`cursor-grab touch-none ${hidden || isDragging ? 'opacity-40' : ''}`}
+    >
       <TicketCard {...cardProps} />
     </div>
   );
