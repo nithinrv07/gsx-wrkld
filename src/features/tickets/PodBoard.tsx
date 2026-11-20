@@ -12,7 +12,6 @@ import type { PodMember } from '@/types/auth-pod';
 import { TICKET_STATUS_LABELS } from '@/constants/ticket-lifecycle';
 import { EMPTY_TICKET_FILTERS, type CreateTicketInput, type TicketFilters, type TicketStatus, type UpdateTicketInput } from '@/types/ticket';
 import { ticketsApi } from '@/services/api/ticketsApi';
-import { TicketsQueryBoundary } from './TicketsQueryBoundary';
 import {
   useAddDependency,
   useCreateTicket,
@@ -47,11 +46,7 @@ export interface PodBoardProps {
 }
 
 export function PodBoard(props: PodBoardProps) {
-  return (
-    <TicketsQueryBoundary>
-      <PodBoardInner {...props} />
-    </TicketsQueryBoundary>
-  );
+  return <PodBoardInner {...props} />;
 }
 
 function PodBoardInner({ projectSlug, podId, podName, podLeadName, members, currentUser, podTypes = {} }: PodBoardProps) {
@@ -76,7 +71,16 @@ function PodBoardInner({ projectSlug, podId, podName, podLeadName, members, curr
   const projectTickets = useMemo(() => ticketsQuery.data ?? [], [ticketsQuery.data]);
   const dependencies = useMemo(() => depsQuery.data ?? [], [depsQuery.data]);
   const sprints = useMemo(() => sprintsQuery.data ?? [], [sprintsQuery.data]);
-  const podTickets = useMemo(() => projectTickets.filter((t) => t.podId === podId), [projectTickets, podId]);
+  const podTickets = useMemo(
+    () =>
+      projectTickets.filter(
+        (t) =>
+          t.podId === podId ||
+          t.podId.toLowerCase() === podId.toLowerCase() ||
+          t.podId.replace(/^pod-/, '').toLowerCase() === podId.replace(/^pod-/, '').toLowerCase()
+      ),
+    [projectTickets, podId]
+  );
   const visible = useMemo(() => applyTicketFilters(podTickets, filters), [podTickets, filters]);
   const backlogAll = podTickets.filter((t) => t.status === 'backlog');
   const backlogVisible = visible.filter((t) => t.status === 'backlog');

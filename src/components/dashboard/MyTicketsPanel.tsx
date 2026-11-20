@@ -54,7 +54,7 @@ export const MyTicketsPanel: React.FC<MyTicketsPanelProps> = ({
   };
 
   return (
-    <Card id="my-tickets" className="scroll-mt-24">
+    <Card id="my-tickets" className="scroll-mt-24 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
       <PanelHeader
         title="My assigned tickets"
         subtitle="Your current work items"

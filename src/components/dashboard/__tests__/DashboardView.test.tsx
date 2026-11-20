@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DashboardProviders } from '../DashboardProviders';
+import { QueryProvider } from '@/providers/QueryProvider';
 import { DashboardView } from '../DashboardView';
 import { MOCK_SESSION_KEY } from '@/features/auth/useMockSession';
 
@@ -15,9 +15,9 @@ const renderAt = (search: string, userId: string | null = 'usr-4') => {
   signInAs(userId);
   window.history.replaceState({}, '', `/dashboard${search}`);
   return render(
-    <DashboardProviders>
+    <QueryProvider>
       <DashboardView />
-    </DashboardProviders>
+    </QueryProvider>
   );
 };
 

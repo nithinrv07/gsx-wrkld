@@ -97,7 +97,7 @@ export default function ProjectsPage() {
         title="Projects"
         description="Cross-pod software projects, repositories, delivery milestones, and sprint cadences."
         breadcrumbs={[
-          { label: 'Home', href: '/' },
+          { label: 'Home', href: '/dashboard' },
           { label: 'Projects' },
         ]}
         actions={

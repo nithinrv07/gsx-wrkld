@@ -11,7 +11,7 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'usr-2',
-    name: 'SHWETHA V',
+    name: 'Shwetha V',
     email: 'shwetha@gsx.org',
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     githubHandle: 'shwetha_v',

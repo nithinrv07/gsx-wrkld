@@ -13,27 +13,23 @@ import type {
 import { nextTicketKey } from '@/features/tickets/lib/ticketHelpers';
 import { isTicketStatus } from '@/constants/ticket-lifecycle';
 import { ApiError, type TicketsDataSource } from './ticketsSource';
-
-interface ProjectTickets {
-  projectSlug: string;
-  /** Proposed: the blueprint does not define ticket key prefixes. Derived from the project slug. */
-  ticketKeyPrefix: string;
-  tickets: Ticket[];
-  dependencies: TicketDependency[];
-}
+import { sprintsApi } from './sprintsApi';
+import {
+  isProjectTickets,
+  seedKanbanProjectsFromDashboard,
+  KNOWN_PREFIXES,
+  matchProjectSlug,
+  type ProjectTickets,
+} from '@/features/tickets/lib/ticketAdapter';
 
 export interface TicketsLocalStoreOptions {
   /** localStorage key. Omit to keep data in memory only (tests). */
   storageKey?: string;
+  /** Whether to seed initial data from Dashboard mock tickets if empty. Defaults to true when storageKey is 'wrkld_local_tickets'. */
+  seedFromDashboard?: boolean;
 }
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
-
-function isProjectTickets(value: unknown): value is ProjectTickets {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as Partial<ProjectTickets>;
-  return typeof v.projectSlug === 'string' && typeof v.ticketKeyPrefix === 'string' && Array.isArray(v.tickets) && Array.isArray(v.dependencies);
-}
 
 export function keyPrefixFor(projectSlug: string): string {
   const letters = projectSlug.replace(/[^a-z]/gi, '').slice(0, 3).toUpperCase();
@@ -62,9 +58,20 @@ export class TicketsLocalStore implements TicketsDataSource {
     return clone(this.project(projectSlug).dependencies);
   }
 
-  /** Sprints belong to Module 3 (Project & Sprint). This store has none. */
-  async listSprints(): Promise<TicketSprintOption[]> {
-    return [];
+  /** Sprints belong to Module 3 (Project & Sprint). Fetches sprints for the project. */
+  async listSprints(projectSlug?: string): Promise<TicketSprintOption[]> {
+    if (!projectSlug) return [];
+    try {
+      const sprints = await sprintsApi.getSprintsByProject(projectSlug);
+      return sprints.map((s) => ({
+        id: s.id,
+        name: s.name,
+        startDate: s.startDate,
+        endDate: s.endDate,
+      }));
+    } catch {
+      return [];
+    }
   }
 
   async createTicket(projectSlug: string, input: CreateTicketInput): Promise<Ticket> {
@@ -133,9 +140,14 @@ export class TicketsLocalStore implements TicketsDataSource {
   // --- internals ---
 
   private project(projectSlug: string): ProjectTickets {
-    let project = this.projects.find((p) => p.projectSlug === projectSlug);
+    let project = this.projects.find((p) => p.projectSlug === projectSlug || matchProjectSlug(p.projectSlug, projectSlug));
     if (!project) {
-      project = { projectSlug, ticketKeyPrefix: keyPrefixFor(projectSlug), tickets: [], dependencies: [] };
+      project = {
+        projectSlug,
+        ticketKeyPrefix: KNOWN_PREFIXES[projectSlug] ?? keyPrefixFor(projectSlug),
+        tickets: [],
+        dependencies: [],
+      };
       this.projects.push(project);
     }
     return project;
@@ -169,6 +181,12 @@ export class TicketsLocalStore implements TicketsDataSource {
     if (!key || typeof window === 'undefined') return;
     try {
       const stored = window.localStorage.getItem(key);
+      const shouldSeed = this.options.seedFromDashboard ?? (key === 'wrkld_local_tickets');
+      if (stored === null && shouldSeed) {
+        this.projects = seedKanbanProjectsFromDashboard();
+        this.persist();
+        return;
+      }
       if (!stored) return;
       const parsed: unknown = JSON.parse(stored);
       this.projects = Array.isArray(parsed) ? parsed.filter(isProjectTickets) : [];

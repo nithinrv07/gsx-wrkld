@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { X, Zap, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { SprintStatus } from '@/types';
 import { Button } from '@/components/ui';
 import { useCreateSprint } from '@/hooks/useSprints';
 
@@ -12,6 +14,33 @@ export interface CreateSprintModalProps {
   projectSlug: string;
   projectName?: string;
 }
+
+export const createSprintSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Sprint name is required.')
+      .min(3, 'Sprint name must be at least 3 characters.'),
+    startDate: z.string().min(1, 'Start date is required.'),
+    endDate: z.string().min(1, 'End date is required.'),
+    status: z.enum(['planning', 'active', 'in-progress', 'review', 'completed'] as const),
+    goal: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.startDate && data.endDate) {
+        return new Date(data.endDate) > new Date(data.startDate);
+      }
+      return true;
+    },
+    {
+      message: 'End date must be strictly after the start date.',
+      path: ['endDate'],
+    }
+  );
+
+export type CreateSprintFormData = z.infer<typeof createSprintSchema>;
 
 interface FormProps {
   onClose: () => void;
@@ -24,17 +53,25 @@ const CreateSprintForm: React.FC<FormProps> = ({
   projectSlug,
   projectName,
 }) => {
-  const [name, setName] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [status, setStatus] = useState<SprintStatus>('planning');
-  const [goal, setGoal] = useState('');
-
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const createMutation = useCreateSprint(projectSlug);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CreateSprintFormData>({
+    resolver: zodResolver(createSprintSchema),
+    defaultValues: {
+      name: '',
+      startDate: '',
+      endDate: '',
+      status: 'planning',
+      goal: '',
+    },
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -46,51 +83,19 @@ const CreateSprintForm: React.FC<FormProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, createMutation.isPending]);
 
-  const validate = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!name.trim()) {
-      newErrors.name = 'Sprint name is required.';
-    } else if (name.trim().length < 3) {
-      newErrors.name = 'Sprint name must be at least 3 characters.';
-    }
-
-    if (!startDate) {
-      newErrors.startDate = 'Start date is required.';
-    }
-
-    if (!endDate) {
-      newErrors.endDate = 'End date is required.';
-    }
-
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      if (end <= start) {
-        newErrors.endDate = 'End date must be strictly after the start date.';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: CreateSprintFormData) => {
     setApiError(null);
-
-    if (!validate()) return;
 
     try {
       await createMutation.mutateAsync({
-        name: name.trim(),
-        startDate,
-        endDate,
-        status,
-        goal: goal.trim() || undefined,
+        name: data.name.trim(),
+        startDate: data.startDate,
+        endDate: data.endDate,
+        status: data.status,
+        goal: data.goal?.trim() || undefined,
       });
 
-      setSuccessMessage(`Sprint "${name.trim()}" created successfully!`);
+      setSuccessMessage(`Sprint "${data.name.trim()}" created successfully!`);
       setTimeout(() => {
         onClose();
       }, 700);
@@ -131,7 +136,7 @@ const CreateSprintForm: React.FC<FormProps> = ({
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
         {apiError && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -157,11 +162,7 @@ const CreateSprintForm: React.FC<FormProps> = ({
           <input
             id="sprint-name"
             type="text"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (errors.name) setErrors((prev) => ({ ...prev, name: '' }));
-            }}
+            {...register('name')}
             placeholder="e.g. Sprint 3 — Core Delivery"
             className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white transition-all outline-none ${
               errors.name
@@ -170,7 +171,7 @@ const CreateSprintForm: React.FC<FormProps> = ({
             }`}
           />
           {errors.name && (
-            <p className="text-xs text-rose-600 font-medium">{errors.name}</p>
+            <p className="text-xs text-rose-600 font-medium">{errors.name.message}</p>
           )}
         </div>
 
@@ -186,13 +187,7 @@ const CreateSprintForm: React.FC<FormProps> = ({
             <input
               id="sprint-start-date"
               type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                if (errors.startDate) {
-                  setErrors((prev) => ({ ...prev, startDate: '' }));
-                }
-              }}
+              {...register('startDate')}
               className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white transition-all outline-none ${
                 errors.startDate
                   ? 'border-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/15'
@@ -201,7 +196,7 @@ const CreateSprintForm: React.FC<FormProps> = ({
             />
             {errors.startDate && (
               <p className="text-xs text-rose-600 font-medium">
-                {errors.startDate}
+                {errors.startDate.message}
               </p>
             )}
           </div>
@@ -216,13 +211,7 @@ const CreateSprintForm: React.FC<FormProps> = ({
             <input
               id="sprint-end-date"
               type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                if (errors.endDate) {
-                  setErrors((prev) => ({ ...prev, endDate: '' }));
-                }
-              }}
+              {...register('endDate')}
               className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white transition-all outline-none ${
                 errors.endDate
                   ? 'border-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/15'
@@ -231,35 +220,32 @@ const CreateSprintForm: React.FC<FormProps> = ({
             />
             {errors.endDate && (
               <p className="text-xs text-rose-600 font-medium">
-                {errors.endDate}
+                {errors.endDate.message}
               </p>
             )}
           </div>
         </div>
 
-        {/* Initial Status */}
+        {/* Initial Sprint Status */}
         <div className="space-y-1.5">
           <label
             htmlFor="sprint-status"
             className="text-xs font-semibold text-slate-700"
           >
-            Sprint Cadence Status
+            Sprint Status
           </label>
           <select
             id="sprint-status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as SprintStatus)}
+            {...register('status')}
             className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#5851d8] focus:ring-2 focus:ring-[#5851d8]/15 outline-none transition-all cursor-pointer"
           >
-            <option value="planning">Planning (Backlog grooming)</option>
-            <option value="active">Active (Current sprint)</option>
+            <option value="planning">Planning</option>
+            <option value="active">Active</option>
             <option value="in-progress">In Progress</option>
-            <option value="review">Review</option>
-            <option value="completed">Completed</option>
           </select>
         </div>
 
-        {/* Goal */}
+        {/* Sprint Goal */}
         <div className="space-y-1.5">
           <label
             htmlFor="sprint-goal"
@@ -270,9 +256,8 @@ const CreateSprintForm: React.FC<FormProps> = ({
           <textarea
             id="sprint-goal"
             rows={2}
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            placeholder="Primary milestone or deliverables for this sprint cycle..."
+            {...register('goal')}
+            placeholder="Key delivery targets, milestone objectives, or pod commitments..."
             className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#5851d8] focus:ring-2 focus:ring-[#5851d8]/15 outline-none transition-all resize-none"
           />
         </div>
@@ -315,7 +300,6 @@ export const CreateSprintModal: React.FC<CreateSprintModalProps> = ({
       aria-modal="true"
       aria-labelledby="create-sprint-title"
     >
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
         onClick={onClose}

@@ -4,3 +4,4 @@
 export { PodBoard, type PodBoardProps } from './PodBoard';
 export { getTicketPermissions, type TicketPermissions } from './lib/ticketPermissions';
 export { ticketKeys, useProjectTickets } from './hooks/useTickets';
+export * from './lib/ticketAdapter';

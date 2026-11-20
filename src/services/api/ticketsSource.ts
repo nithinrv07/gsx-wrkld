@@ -21,8 +21,8 @@ export interface TicketsDataSource {
   readonly kind: 'local' | 'live';
   listProjectTickets(projectSlug: string): Promise<Ticket[]>;
   listDependencies(projectSlug: string): Promise<TicketDependency[]>;
-  /** Sprints are owned by Module 3. The local store returns none. */
-  listSprints(projectSlug: string): Promise<TicketSprintOption[]>;
+  /** Sprints are owned by Module 3 (Project & Sprint). */
+  listSprints(projectSlug?: string): Promise<TicketSprintOption[]>;
   createTicket(projectSlug: string, input: CreateTicketInput): Promise<Ticket>;
   updateTicket(projectSlug: string, key: string, input: UpdateTicketInput): Promise<Ticket>;
   moveTicket(projectSlug: string, key: string, status: TicketStatus): Promise<Ticket>;

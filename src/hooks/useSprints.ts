@@ -28,6 +28,9 @@ export function useCreateSprint(projectSlug: string) {
       queryClient.invalidateQueries({
         queryKey: sprintKeys.byProject(projectSlug),
       });
+      queryClient.invalidateQueries({
+        queryKey: ['projects', projectSlug, 'ticket-sprints'],
+      });
     },
   });
 }

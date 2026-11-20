@@ -11,50 +11,51 @@ interface PodListProps {
 }
 
 export const PodList: React.FC<PodListProps> = ({ pods, projectSlug }) => {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-white">Domain Pods</h3>
+  if (pods.length === 0) {
+    return (
+      <div className="text-center p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xs">
+        <p className="text-slate-500 text-sm">No domain pods configured for this project yet.</p>
       </div>
+    );
+  }
 
-      {pods.length === 0 ? (
-        <div className="text-center p-8 bg-slate-900/50 border border-slate-800 rounded-xl">
-          <p className="text-slate-400 text-sm">No pods have been created for this project yet.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {pods.map((pod) => (
-            <div
-              key={pod.id}
-              className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 transition-all space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="px-2.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-xs font-mono font-semibold text-slate-300">
-                    {pod.type}
-                  </span>
-                  <h4 className="font-semibold text-white">{pod.name}</h4>
-                </div>
-
-                <Link
-                  href={`/projects/${projectSlug}/pods/${pod.id}`}
-                  aria-label={`Open ${pod.name}`}
-                  className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                </Link>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
-                <span>Lead: <strong className="text-slate-200">{pod.leadName || 'Unassigned'}</strong></span>
-                <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" /> {pod.memberCount} members
-                </span>
-              </div>
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {pods.map((pod) => (
+        <div
+          key={pod.id}
+          className="group relative bg-white border border-slate-200/90 hover:border-[#5851d8]/40 hover:shadow-xs rounded-2xl p-5 transition-all space-y-3.5"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="px-2.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-xs font-mono font-semibold text-[#5851d8]">
+                {pod.type}
+              </span>
+              <h3 className="font-semibold text-slate-900 group-hover:text-[#5851d8] transition-colors">
+                {pod.name}
+              </h3>
             </div>
-          ))}
+
+            <Link
+              href={`/projects/${projectSlug}/pods/${pod.id}`}
+              aria-label={`Open ${pod.name} board`}
+              className="p-1.5 text-slate-400 group-hover:text-[#5851d8] hover:bg-indigo-50 rounded-lg transition-colors"
+            >
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
+            <span>
+              Lead: <strong className="text-slate-700 font-medium">{pod.leadName || 'Unassigned'}</strong>
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-500">
+              <Users className="w-3.5 h-3.5 text-slate-400" />
+              <span>{pod.memberCount} {pod.memberCount === 1 ? 'member' : 'members'}</span>
+            </span>
+          </div>
         </div>
-      )}
+      ))}
     </div>
   );
 };
