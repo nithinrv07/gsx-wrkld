@@ -37,12 +37,11 @@ describe('countByPhase', () => {
 });
 
 describe('dashboardRoutes', () => {
-  it('builds ticket and analytics links', () => {
+  it('builds ticket, pod board and project links', () => {
     expect(dashboardRoutes.ticket({ projectSlug: 'wrkld', pod: 'FE', key: 'WRK-104' })).toBe(
       '/projects/wrkld/pods/pod-fe?ticket=WRK-104'
     );
     expect(dashboardRoutes.podBoard('wrkld', 'INT')).toBe('/projects/wrkld/pods/pod-int');
-    expect(dashboardRoutes.analytics('ai-analytics', 'QA')).toBe('/analytics?project=ai-analytics&pod=QA');
-    expect(dashboardRoutes.analytics()).toBe('/analytics');
+    expect(dashboardRoutes.project('ai-analytics')).toBe('/projects/ai-analytics');
   });
 });

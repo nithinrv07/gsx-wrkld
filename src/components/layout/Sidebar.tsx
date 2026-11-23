@@ -3,16 +3,7 @@
 import React, { Suspense } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  LayoutDashboard,
-  FolderKanban,
-  Users2,
-  Zap,
-  KanbanSquare,
-  BarChart3,
-  Settings,
-  LogOut,
-} from 'lucide-react';
+import { LayoutDashboard, FolderKanban, LogOut } from 'lucide-react';
 import { CURRENT_USER } from '@/constants/navigation';
 import { useMockSession, clearMockSession } from '@/features/auth/useMockSession';
 import { useAuth } from '@/lib/auth/rbac';
@@ -36,47 +27,21 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+// Two destinations only (spec 12.2): Dashboard and Projects. Pods, sprints,
+// boards and analytics are all reached from inside a project.
+const MENU = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Projects', href: '/projects', icon: FolderKanban },
+];
+
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
   const router = useRouter();
 
-  const isItemActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard' || pathname === '/';
-    }
-    if (href === '/projects') {
-      return pathname === '/projects' || (pathname?.startsWith('/projects/') && !pathname?.includes('/pods/'));
-    }
-    if (href === '/pods') {
-      return pathname?.startsWith('/pods') || pathname?.includes('/pods/');
-    }
-    if (href === '/sprints') {
-      return pathname?.startsWith('/sprints');
-    }
-    if (href === '/tasks') {
-      return pathname?.startsWith('/tasks');
-    }
-    if (href === '/analytics') {
-      return pathname?.startsWith('/analytics') ?? false;
-    }
-    if (href === '/settings') {
-      return pathname?.startsWith('/settings') ?? false;
-    }
-    return pathname === href;
-  };
-
-  const mainMenu = [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Projects', href: '/projects', icon: FolderKanban },
-    { label: 'Pods', href: '/pods', icon: Users2 },
-    { label: 'Sprints', href: '/sprints', icon: Zap },
-    { label: 'Kanban / Tasks', href: '/tasks', icon: KanbanSquare },
-    { label: 'Analytics', href: '/analytics', icon: BarChart3 },
-  ];
-
-  const generalMenu = [
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ];
+  const isItemActive = (href: string) =>
+    href === '/dashboard'
+      ? pathname === '/dashboard' || pathname === '/'
+      : pathname === href || pathname.startsWith(`${href}/`);
 
   const handleSignOut = () => {
     clearMockSession();
@@ -84,88 +49,39 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-    <div className="flex flex-col justify-between h-full px-3 py-4">
-      <div className="space-y-6">
-        {/* Main Menu Section */}
-        <div>
-          <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Main Menu
-          </p>
-          <nav className="space-y-1">
-            {mainMenu.map((item) => {
-              const Icon = item.icon;
-              const active = isItemActive(item.href);
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={active ? 'page' : undefined}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    active
-                      ? 'bg-blue-50 text-blue-600 font-semibold shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* General Section */}
-        <div>
-          <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            General
-          </p>
-          <nav className="space-y-1">
-            {generalMenu.map((item) => {
-              const Icon = item.icon;
-              const active = isItemActive(item.href);
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={active ? 'page' : undefined}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                    active
-                      ? 'bg-blue-50 text-blue-600 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 shrink-0 text-slate-400" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+    <div className="flex flex-col h-full px-3 py-4">
+      <nav aria-label="Main navigation" className="space-y-1">
+        {MENU.map((item) => {
+          const Icon = item.icon;
+          const active = isItemActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              aria-current={active ? 'page' : undefined}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                active
+                  ? 'bg-blue-50 text-blue-600 font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
             >
-              <LogOut className="w-4 h-4 shrink-0 text-slate-400 hover:text-rose-600" />
-              <span>Logout</span>
-            </button>
-          </nav>
-        </div>
-      </div>
+              <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
-      {/* Sprint 2 Card matching Screenshot */}
-      <div className="pt-4">
-        <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-4 text-white shadow-md">
-          <p className="text-sm font-bold">Sprint 2</p>
-          <p className="text-[11px] text-blue-100 mt-0.5 mb-3">Active — 4 Days Left</p>
-          <Link
-            href="/sprints"
-            onClick={onNavigate}
-            className="block w-full py-1.5 px-3 bg-white text-blue-600 text-xs font-semibold text-center rounded-xl shadow-xs hover:bg-blue-50 transition-colors"
-          >
-            View Sprint
-          </Link>
-        </div>
+      <div className="mt-auto pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+        >
+          <LogOut className="w-4 h-4 shrink-0 text-slate-400" />
+          <span>Sign out</span>
+        </button>
       </div>
     </div>
   );

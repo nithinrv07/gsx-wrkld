@@ -7,7 +7,6 @@ import {
   AlertCircle,
   ArrowLeft,
   RefreshCw,
-  BarChart3,
   Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -117,13 +116,6 @@ function ProjectDetailsContent() {
               Overall milestone completion, pod velocity, and ticket lifecycle distribution.
             </p>
           </div>
-          <Link
-            href={`/analytics?project=${project.slug}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5851d8] hover:text-[#4a43c4] hover:underline"
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>Open in Global Analytics</span>
-          </Link>
         </div>
         <ProjectProgressSection
           slug={project.slug}

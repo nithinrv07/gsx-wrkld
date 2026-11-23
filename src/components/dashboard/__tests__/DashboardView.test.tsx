@@ -48,7 +48,7 @@ describe('DashboardView', () => {
   it('gives a Super Admin the create action and every project', async () => {
     renderAt('', 'usr-1'); // Nithin R V, Super Admin
     expect(await screen.findByRole('button', { name: 'New project' }, opts)).toBeInTheDocument();
-    expect(await screen.findByText('Partner sandbox credentials expired', {}, opts)).toBeInTheDocument();
+    expect(await screen.findByText('Identity provider sandbox credentials expired', {}, opts)).toBeInTheDocument();
   });
 
   it('redirects to sign-in when there is no session', async () => {

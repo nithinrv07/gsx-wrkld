@@ -20,7 +20,7 @@
 8. [CI Workflow and GitHub Actions Automation](#8-ci-workflow-and-github-actions-automation)
 9. [Mock-Data Limitations and Backend Integration Dependencies](#9-mock-data-limitations-and-backend-integration-dependencies)
 10. [Outstanding Work Belonging to Other Module Owners](#10-outstanding-work-belonging-to-other-module-owners)
-11. [Path A Route-Retention Decision and Deferred Strict Pruning](#11-path-a-route-retention-decision-and-deferred-strict-pruning)
+11. [Simplified Navigation: Two Destinations](#11-simplified-navigation-two-destinations)
 
 ---
 
@@ -40,11 +40,6 @@ src/app/
 │   │       └── pods/
 │   │           ├── page.tsx        # Suspense-wrapped graceful redirect to /projects/[slug]
 │   │           └── [pod]/page.tsx  # Pod Kanban Board, Team Roster, and Lead sign-off
-│   ├── pods/page.tsx               # Engineering Pods directory (FE, BE, INT, QA)
-│   ├── sprints/page.tsx            # Sprints roadmap & active iteration timelines
-│   ├── tasks/page.tsx              # Cross-pod work items directory & universal ticket search
-│   ├── analytics/page.tsx          # Global cross-project comparative analytics suite
-│   └── settings/page.tsx           # Profile info, testing persona switcher, RBAC matrix
 ├── (auth)/                         # Unauthenticated Route Group (Bare Shell)
 │   └── sign-in/page.tsx            # Persona selection & GitHub sign-in (No sidebar/topbar)
 ├── favicon.ico
@@ -97,9 +92,9 @@ The top navigation bar ([src/components/layout/TopNavbar.tsx](file:///e:/gsx-wrk
 5. **Clean User Menu:** Obsolete duplicate Settings link removed; displays authenticated persona details (`name`, `@githubHandle`, `globalRole`) and accessible Sign Out trigger.
 
 ### Sidebar Navigation
-[src/components/layout/Sidebar.tsx](file:///e:/gsx-wrkld-main/gsx-wrkld-main/src/components/layout/Sidebar.tsx) maps to the seven canonical navigation destinations (`NAV_ITEMS`):
-* **Main Menu:** Dashboard (`/dashboard`), Projects (`/projects`), Pods (`/pods`), Sprints (`/sprints`), Kanban / Tasks (`/tasks`), Analytics (`/analytics`).
-* **General Menu:** Settings (`/settings`), Sign Out. (Redundant `Help & Docs` duplicate removed).
+`src/components/layout/Sidebar.tsx` has two destinations (`NAV_ITEMS`), matching spec 12.2:
+* **Menu:** Dashboard (`/dashboard`), Projects (`/projects`). Projects stays highlighted on project, pod and board pages.
+* **Sign out** at the bottom. Pods, sprints, boards and progress are reached from inside a project (see §11).
 * **Footer:** Displays canonical logged-in persona name, role, and initials from `useMockSession()`.
 
 ---
@@ -244,15 +239,12 @@ The following responsibilities remain outside the Frontend Lead scope and belong
 
 ---
 
-## 11. Path A Route-Retention Decision and Deferred Strict Pruning
+## 11. Simplified Navigation: Two Destinations
 
-During the Task 8 review, an architectural decision was evaluated between **Path A (Seven-Route Hybrid Architecture)** and **Path B (Strict Route Pruning)**:
+The earlier "Path A" decision (keep seven top-level pages) was reversed to make the app simpler for users. The app now follows spec 12.2: **Dashboard** and **Projects** only.
 
-* **Approved Decision (Path A):**
-  * Retain all seven canonical navigation destinations (`/dashboard`, `/projects`, `/sprints`, `/tasks`, `/pods`, `/analytics`, `/settings`).
-  * Embed project-level analytics, milestone telemetry, and ticket drill-down tables directly into `/projects/[slug]` for immediate context.
-  * Retain the top-level `/analytics` route as a global cross-project comparison tool.
-  * Retain `/pods`, `/sprints`, and `/tasks` as organization-wide directory hubs.
-  * Keep `/settings` active for testing persona switching and RBAC validation.
-* **Deferred Strict Pruning (Path B):**
-  * The recommendation to eliminate top-level `/pods`, `/sprints`, `/tasks`, and `/analytics` and redirect them into `/projects/wrkld` was deliberately deferred. This preserves full functionality, prevents user disorientation, aligns with `NAV_ITEMS`, and maintains comprehensive test coverage.
+* **Removed pages:** `/pods`, `/sprints`, `/tasks`, `/analytics`, `/settings`. Their per-project content lives on the project page (`/projects/[slug]`: progress analytics, ticket table, pods, sprints) and the pod page (members and Kanban board). Not carried over: the cross-project views (ticket search across all projects, sprint roadmap across projects, project-vs-project analytics). If users need them, add them back inside Projects rather than as top-level pages.
+* **Old links still work:** `next.config.ts` redirects them (temporary 307): `/analytics?project=<slug>` → `/projects/<slug>`; `/analytics`, `/pods`, `/sprints`, `/tasks` → `/projects`; `/settings` → `/dashboard`.
+* **Dashboard:** four stat cards with real numbers only, then My Tickets and Blocker Alerts side by side, then My Projects. The sample-data widgets (velocity chart, pod workload, sprint gauge, made-up trend badges) were removed.
+* **Role switcher removed:** the testing "Switch Role" banner on `/projects` is gone, so users can't change their own role. To test another role, sign out and pick a different persona on `/sign-in`.
+* **Guarded by tests:** `src/__tests__/routes.test.ts` fails if a removed page comes back, a redirect is missing, or any source file links to a removed page.

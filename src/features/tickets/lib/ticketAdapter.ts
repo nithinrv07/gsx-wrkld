@@ -218,10 +218,10 @@ export function isProjectTickets(value: unknown): value is ProjectTickets {
 export const KNOWN_PREFIXES: Record<string, string> = {
   wrkld: 'WRK',
   'wrkld-core': 'WRK',
-  'ai-analytics': 'AIA',
-  'mobile-companion': 'MOB',
-  'customer-portal': 'CPT',
-  'partner-api': 'PAR',
+  'telemetry-engine': 'TEL',
+  'mobile-pwa': 'MOB',
+  'design-system-v2': 'DSV',
+  'auth-security': 'SSO',
 };
 
 export function seedKanbanProjectsFromDashboard(): ProjectTickets[] {

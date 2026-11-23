@@ -2,93 +2,99 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { NAV_ITEMS } from '../constants/navigation';
+import nextConfig from '../../next.config';
 
-describe('Task 8: Route and Navigation Cleanup (Seven-Route Hybrid Architecture)', () => {
+// Simplified navigation (spec 12.2): two destinations, Dashboard and Projects.
+// Pods, sprints, boards and progress are reached from inside a project.
+describe('Routes and navigation: two destinations', () => {
   const appDir = path.resolve(__dirname, '../app');
   const appRoutesDir = path.resolve(appDir, '(app)');
+  const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), 'utf8');
+  const REMOVED = ['pods', 'sprints', 'tasks', 'analytics', 'settings'];
 
-  it('validates the canonical seven-route NAV_ITEMS configuration', () => {
-    expect(NAV_ITEMS).toHaveLength(7);
-    const labels = NAV_ITEMS.map((item) => item.label);
-    expect(labels).toEqual([
-      'Home',
-      'Projects',
-      'Sprints',
-      'Tasks',
-      'Pods',
-      'Analytics',
-      'Settings',
+  it('NAV_ITEMS lists only Dashboard and Projects', () => {
+    expect(NAV_ITEMS.map((i) => [i.label, i.href])).toEqual([
+      ['Dashboard', '/dashboard'],
+      ['Projects', '/projects'],
     ]);
   });
 
-  it('preserves all core authenticated application routes inside (app)', () => {
-    const expectedAppRoutes = [
-      'dashboard',
-      'projects',
-      'pods',
-      'sprints',
-      'tasks',
-      'analytics',
-      'settings',
-    ];
-
-    for (const route of expectedAppRoutes) {
-      const pageFile = path.resolve(appRoutesDir, route, 'page.tsx');
-      expect(fs.existsSync(pageFile), `Expected ${route}/page.tsx to exist`).toBe(true);
+  it('keeps the dashboard, projects, project detail and pod pages', () => {
+    for (const page of [
+      'dashboard/page.tsx',
+      'projects/page.tsx',
+      'projects/[slug]/page.tsx',
+      'projects/[slug]/pods/page.tsx',
+      'projects/[slug]/pods/[pod]/page.tsx',
+    ]) {
+      expect(fs.existsSync(path.resolve(appRoutesDir, page)), `${page} should exist`).toBe(true);
     }
   });
 
-  it('keeps /sign-in cleanly outside (app) in (auth) route group', () => {
-    const signInPage = path.resolve(appDir, '(auth)/sign-in/page.tsx');
-    expect(fs.existsSync(signInPage)).toBe(true);
+  it('no longer has the standalone pods, sprints, tasks, analytics or settings pages', () => {
+    for (const route of REMOVED) {
+      expect(fs.existsSync(path.resolve(appRoutesDir, route)), `${route}/ should be removed`).toBe(false);
+    }
   });
 
-  it('provides a redirect page for /projects/[slug]/pods to avoid 404s', () => {
-    const projectPodsPage = path.resolve(appRoutesDir, 'projects/[slug]/pods/page.tsx');
-    expect(fs.existsSync(projectPodsPage)).toBe(true);
+  it('keeps /sign-in outside (app) in the (auth) route group', () => {
+    expect(fs.existsSync(path.resolve(appDir, '(auth)/sign-in/page.tsx'))).toBe(true);
   });
 
-  it('ensures Sidebar does not have duplicate Help & Docs pointing to /settings', () => {
-    const sidebarSource = fs.readFileSync(
-      path.resolve(__dirname, '../components/layout/Sidebar.tsx'),
-      'utf8'
-    );
-    expect(sidebarSource).not.toContain('Help & Docs');
-    expect(sidebarSource).not.toContain('HelpCircle');
-    expect(sidebarSource).toContain("href: '/settings'");
+  it('redirects every removed page so old links and bookmarks still work', async () => {
+    const redirects = await nextConfig.redirects!();
+    const bySource = (src: string) => redirects.filter((r) => r.source === src);
+
+    for (const route of REMOVED) {
+      expect(bySource(`/${route}`).length, `/${route} should redirect`).toBeGreaterThan(0);
+      for (const r of bySource(`/${route}`)) expect(r.permanent).toBe(false);
+    }
+    expect(bySource('/settings')[0].destination).toBe('/dashboard');
+    expect(bySource('/pods')[0].destination).toBe('/projects');
+
+    // /analytics?project=<slug> opens that project's page.
+    const projectAnalytics = bySource('/analytics').find((r) => r.has?.some((h) => h.key === 'project'));
+    expect(projectAnalytics?.destination).toBe('/projects/:project');
   });
 
-  it('ensures Sidebar maps all seven canonical destinations', () => {
-    const sidebarSource = fs.readFileSync(
-      path.resolve(__dirname, '../components/layout/Sidebar.tsx'),
-      'utf8'
-    );
-    expect(sidebarSource).toContain("href: '/dashboard'");
-    expect(sidebarSource).toContain("href: '/projects'");
-    expect(sidebarSource).toContain("href: '/pods'");
-    expect(sidebarSource).toContain("href: '/sprints'");
-    expect(sidebarSource).toContain("href: '/tasks'");
-    expect(sidebarSource).toContain("href: '/analytics'");
-    expect(sidebarSource).toContain("href: '/settings'");
+  it('Sidebar links only to Dashboard and Projects', () => {
+    const sidebar = read('../components/layout/Sidebar.tsx');
+    expect(sidebar).toContain("href: '/dashboard'");
+    expect(sidebar).toContain("href: '/projects'");
+    for (const route of REMOVED) expect(sidebar).not.toContain(`'/${route}'`);
   });
 
-  it('ensures Project Details page integrates ProjectTicketsTable for analytics and links to global analytics', () => {
-    const projectDetailSource = fs.readFileSync(
-      path.resolve(appRoutesDir, 'projects/[slug]/page.tsx'),
-      'utf8'
-    );
-    expect(projectDetailSource).toContain('ProjectTicketsTable');
-    expect(projectDetailSource).toContain('Progress & Performance Analytics');
-    expect(projectDetailSource).toContain('/analytics?project=');
+  it('project page holds progress analytics and pods without linking to a global analytics page', () => {
+    const projectDetail = read('../app/(app)/projects/[slug]/page.tsx');
+    expect(projectDetail).toContain('ProjectProgressSection');
+    expect(projectDetail).toContain('ProjectTicketsTable');
+    expect(projectDetail).toContain('PodList');
+    // Component imports live under '@/components/analytics/'; only a link would start with a quote + '/analytics'.
+    expect(projectDetail).not.toMatch(/['"`]\/analytics/);
   });
 
-  it('ensures Settings page retains persona switcher for RBAC testing', () => {
-    const settingsSource = fs.readFileSync(
-      path.resolve(appRoutesDir, 'settings/page.tsx'),
-      'utf8'
-    );
-    expect(settingsSource).toContain('Switch Testing Profile & Role');
-    expect(settingsSource).toContain('MOCK_USERS');
-    expect(settingsSource).toContain('saveMockSession');
+  it('projects page has no role switcher (users cannot change their own role)', () => {
+    const projects = read('../app/(app)/projects/page.tsx');
+    expect(projects).not.toContain('Switch Role');
+    expect(projects).not.toContain('setRole');
+  });
+
+  it('no source file links to a removed page', () => {
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name !== '__tests__') walk(full);
+        } else if (/\.(tsx?|jsx?)$/.test(entry.name) && !/\.test\./.test(entry.name)) {
+          const src = fs.readFileSync(full, 'utf8');
+          for (const route of REMOVED) {
+            if (new RegExp(`['"\`]/${route}(['"\`?/]|$)`).test(src)) offenders.push(`${path.relative(appDir, full)} -> /${route}`);
+          }
+        }
+      }
+    };
+    walk(path.resolve(__dirname, '..'));
+    expect(offenders).toEqual([]);
   });
 });

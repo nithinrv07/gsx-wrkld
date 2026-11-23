@@ -1,41 +1,10 @@
 import { NavItem, UserProfile } from '@/types';
 
+// The app has two destinations (spec 12.2). Pods, sprints, boards and progress
+// are reached from inside a project.
 export const NAV_ITEMS: NavItem[] = [
-  {
-    label: 'Home',
-    href: '/',
-    iconName: 'Home',
-  },
-  {
-    label: 'Projects',
-    href: '/projects',
-    iconName: 'Projects',
-  },
-  {
-    label: 'Sprints',
-    href: '/sprints',
-    iconName: 'Sprints',
-  },
-  {
-    label: 'Tasks',
-    href: '/tasks',
-    iconName: 'Tasks',
-  },
-  {
-    label: 'Pods',
-    href: '/pods',
-    iconName: 'Pods',
-  },
-  {
-    label: 'Analytics',
-    href: '/analytics',
-    iconName: 'Analytics',
-  },
-  {
-    label: 'Settings',
-    href: '/settings',
-    iconName: 'Settings',
-  },
+  { label: 'Dashboard', href: '/dashboard', iconName: 'Home' },
+  { label: 'Projects', href: '/projects', iconName: 'Projects' },
 ];
 
 export const CURRENT_USER: UserProfile = {

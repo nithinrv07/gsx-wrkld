@@ -25,7 +25,7 @@ export const ProjectSummaryCard: React.FC<{ project: ProjectSummary }> = ({ proj
       <div className="flex flex-1 flex-col gap-4 p-5">
         <div className="flex items-start justify-between gap-3">
           <Link
-            href={dashboardRoutes.analytics(project.slug)}
+            href={dashboardRoutes.project(project.slug)}
             className="group min-w-0 focus:outline-none focus-visible:underline"
           >
             <h3 className="flex items-center gap-1 truncate font-semibold text-slate-900 group-hover:text-[#5851d8]">
@@ -59,7 +59,7 @@ export const ProjectSummaryCard: React.FC<{ project: ProjectSummary }> = ({ proj
       </div>
       <div className="flex items-center justify-between border-t border-slate-100 px-5 py-2.5 text-xs">
         <Link
-          href={dashboardRoutes.analytics(project.slug)}
+          href={dashboardRoutes.project(project.slug)}
           className="inline-flex items-center gap-1 font-medium text-[#5851d8] hover:underline"
         >
           <BarChart3 className="h-3.5 w-3.5" /> View progress

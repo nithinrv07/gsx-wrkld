@@ -83,14 +83,9 @@ function getBreadcrumbs(pathname: string | null): BreadcrumbItem[] {
     accPath += `/${seg}`;
     const isLast = i === segments.length - 1;
 
-    let href: string | undefined = accPath;
-    if (seg === 'pods' && segments[i - 2] === 'projects') {
-      href = '/pods';
-    }
-
     crumbs.push({
       label: formatSegmentLabel(seg),
-      href: isLast ? undefined : href,
+      href: isLast ? undefined : accPath,
     });
   }
 

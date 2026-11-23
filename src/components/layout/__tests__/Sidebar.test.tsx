@@ -25,17 +25,18 @@ describe('Sidebar Integration & Profile Consistency', () => {
     window.localStorage.clear();
   });
 
-  it('renders all four intended navigation items', () => {
+  it('renders only Dashboard and Projects, plus Sign out', () => {
     render(
       <AuthProvider>
         <Sidebar isOpen />
       </AuthProvider>
     );
 
-    expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /projects/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /analytics/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    const links = Array.from(nav.querySelectorAll('a')).map((a) => a.textContent);
+    expect(links).toEqual(['Dashboard', 'Projects']);
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /analytics|settings|pods|sprints|tasks/i })).not.toBeInTheDocument();
   });
 
   it('correctly marks active route highlighting for Dashboard', () => {
@@ -53,25 +54,18 @@ describe('Sidebar Integration & Profile Consistency', () => {
     expect(projectsLink).not.toHaveAttribute('aria-current');
   });
 
-  it('correctly marks active route highlighting for Analytics and Settings', () => {
-    mockPathname = '/analytics';
-    const { rerender } = render(
-      <AuthProvider>
-        <Sidebar isOpen />
-      </AuthProvider>
-    );
-
-    expect(screen.getByRole('link', { name: /analytics/i })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: /dashboard/i })).not.toHaveAttribute('aria-current');
-
-    mockPathname = '/settings';
-    rerender(
-      <AuthProvider>
-        <Sidebar isOpen />
-      </AuthProvider>
-    );
-
-    expect(screen.getByRole('link', { name: /settings/i })).toHaveAttribute('aria-current', 'page');
+  it('keeps Projects highlighted on project, pod and board pages', () => {
+    for (const p of ['/projects', '/projects/wrkld-core', '/projects/wrkld-core/pods/pod-fe']) {
+      mockPathname = p;
+      const { unmount } = render(
+        <AuthProvider>
+          <Sidebar isOpen />
+        </AuthProvider>
+      );
+      expect(screen.getByRole('link', { name: /projects/i })).toHaveAttribute('aria-current', 'page');
+      expect(screen.getByRole('link', { name: /dashboard/i })).not.toHaveAttribute('aria-current');
+      unmount();
+    }
   });
 
   it('displays Shwetha V as Project Lead with initials SV in default/fallback session', () => {

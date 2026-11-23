@@ -7,8 +7,6 @@ import {
   Plus,
   RefreshCw,
   AlertCircle,
-  ShieldCheck,
-  ShieldAlert,
 } from 'lucide-react';
 import { PageHeader, EmptyState, Button } from '@/components/ui';
 import { useProjects } from '@/hooks/useProjects';
@@ -17,7 +15,7 @@ import { ProjectFilters } from '@/components/projects/ProjectFilters';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectTable } from '@/components/projects/ProjectTable';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
-import { useAuth, UserRole } from '@/lib/auth/rbac';
+import { useAuth } from '@/lib/auth/rbac';
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -26,7 +24,7 @@ export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const { user, setRole, canCreateProject } = useAuth();
+  const { canCreateProject } = useAuth();
 
   // TanStack Query hook
   const {
@@ -50,48 +48,6 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
-      {/* RBAC Role Indicator Banner */}
-      <div className="p-3 px-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
-        <div className="flex items-center gap-2">
-          {canCreateProject ? (
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-          ) : (
-            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-          )}
-          <span>
-            Logged in as <strong className="text-white">{user.name}</strong> ({user.role}).{' '}
-            {canCreateProject ? (
-              <span className="text-emerald-300 font-medium">
-                Super Admin privileges active (can create new projects).
-              </span>
-            ) : (
-              <span className="text-slate-300">
-                &quot;New Project&quot; action requires Super Admin role.
-              </span>
-            )}
-          </span>
-        </div>
-
-        {/* Quick Role Switcher for Testing */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-slate-400 font-medium mr-1">Switch Role:</span>
-          {(['Frontend Lead', 'Super Admin', 'Pod Lead'] as UserRole[]).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRole(r)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
-                user.role === r
-                  ? 'bg-[#5851d8] text-white'
-                  : 'bg-white/10 hover:bg-white/20 text-slate-300'
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Page Header */}
       <PageHeader
         title="Projects"

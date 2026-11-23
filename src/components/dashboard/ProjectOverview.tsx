@@ -125,7 +125,7 @@ export const ProjectOverview: React.FC<{ projects: ProjectSummary[] }> = ({ proj
                     {/* Name */}
                     <td className="py-3.5 pl-2">
                       <Link
-                        href={dashboardRoutes.analytics(p.slug)}
+                        href={dashboardRoutes.project(p.slug)}
                         className="font-semibold text-slate-900 group-hover:text-[#5851d8] flex items-center gap-1.5 transition-colors"
                       >
                         <span>{p.name}</span>
@@ -182,7 +182,7 @@ export const ProjectOverview: React.FC<{ projects: ProjectSummary[] }> = ({ proj
                     <td className="py-3.5 pr-2 text-right">
                       <div className="flex items-center justify-end gap-2 text-xs">
                         <Link
-                          href={dashboardRoutes.analytics(p.slug)}
+                          href={dashboardRoutes.project(p.slug)}
                           className="p-1 rounded text-slate-400 hover:text-[#5851d8] hover:bg-indigo-50 transition-colors"
                           title="View progress"
                         >

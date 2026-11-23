@@ -14,11 +14,10 @@ import { dashboardRoutes } from '@/lib/dashboard/routes';
 import { useViewer } from '@/lib/dashboard/viewer';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardStats } from './DashboardStats';
-import { SprintPerformanceChart } from './SprintPerformanceChart';
-import { ActiveProjectsCard } from './ActiveProjectsCard';
-import { PendingReviewsCard } from './PendingReviewsCard';
-import { SprintCompletionCard } from './SprintCompletionCard';
-import { PodWorkloadCard } from './PodWorkloadCard';
+import { MyTicketsPanel } from './MyTicketsPanel';
+import { AlertsPanel } from './AlertsPanel';
+import { ProjectOverview } from './ProjectOverview';
+import { useReadAlerts } from '@/lib/dashboard/local-store';
 import { DashboardEmptyState, DashboardError, DashboardSkeleton } from './DashboardStates';
 
 export function DashboardView() {
@@ -28,6 +27,8 @@ export function DashboardView() {
   const tickets = useMyTickets();
   const blockers = useOpenBlockers();
   const refresh = useRefreshDashboard();
+  // Shared with the top bar's alert bell, so read/unread stays in sync.
+  const [readKeys, setReadKeys] = useReadAlerts(user?.id ?? 'default');
   const isFetching = useIsFetching({ queryKey: dashboardKeys.all }) > 0;
 
   // Same convention as the Pod pages: no session, go to sign-in.
@@ -62,21 +63,31 @@ export function DashboardView() {
         <DashboardEmptyState onRefresh={refresh} />
       ) : (
         <>
-          {/* Top 4 KPI Metric Cards in 1 Row */}
+          {/* 1. At a glance */}
           <DashboardStats summary={data} />
 
-          {/* Middle Row: Sprint Velocity Area Chart & Active Projects Table */}
+          {/* 2. What needs me: my tickets and open blockers */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <SprintPerformanceChart />
-            <ActiveProjectsCard projects={data.projects} />
+            <MyTicketsPanel
+              tickets={tickets.data}
+              isLoading={tickets.isPending}
+              error={tickets.error}
+              onRetry={() => tickets.refetch()}
+              isRetrying={tickets.isFetching}
+            />
+            <AlertsPanel
+              blockers={blockers.data}
+              isLoading={blockers.isPending}
+              error={blockers.error}
+              onRetry={() => blockers.refetch()}
+              isRetrying={blockers.isFetching}
+              readKeys={readKeys}
+              onReadKeysChange={setReadKeys}
+            />
           </div>
 
-          {/* Bottom Row: 3 Cards matching design reference */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <PendingReviewsCard tickets={tickets.data} />
-            <SprintCompletionCard progress={data.overallProgress} />
-            <PodWorkloadCard blockers={blockers.data} />
-          </div>
+          {/* 3. My projects */}
+          <ProjectOverview projects={data.projects} />
         </>
       )}
     </div>

@@ -34,6 +34,8 @@ export const PEOPLE = {
   priya: person('u-priya', 'Priya M'),
   divya: person('u-divya', 'Divya R'),
   edwin: person('u-edwin', 'Edwin A'),
+  keerthana: person('u-keerthana', 'Keerthana S'),
+  naveen: person('u-naveen', 'Naveen M'),
 };
 
 /** Order: backlog, todo, in-progress, pr-review, pod-lead-approved, ready-for-integration, integration-verified, done */
@@ -87,8 +89,9 @@ export const PROJECT_RECORDS: ProjectRecord[] = [
     ],
   }),
   project({
-    slug: 'ai-analytics',
-    name: 'AI Analytics',
+    // Same projects as the Projects page (src/services/fixtures/projects.ts).
+    slug: 'telemetry-engine',
+    name: 'Agile Metrics & Telemetry',
     status: 'in-progress',
     progress: 42,
     lead: PEOPLE.divya,
@@ -101,11 +104,11 @@ export const PROJECT_RECORDS: ProjectRecord[] = [
     ],
   }),
   project({
-    slug: 'mobile-companion',
-    name: 'Mobile Companion',
+    slug: 'mobile-pwa',
+    name: 'Wrkld Mobile Companion PWA',
     status: 'planning',
     progress: 8,
-    lead: PEOPLE.shwetha,
+    lead: PEOPLE.edwin,
     memberIds: ['usr-2', 'usr-4', 'usr-5'],
     pods: [
       pod('FE', 15, [5, 2, 1, 0, 0, 0, 0, 1], PEOPLE.manya),
@@ -115,11 +118,11 @@ export const PROJECT_RECORDS: ProjectRecord[] = [
     ],
   }),
   project({
-    slug: 'customer-portal',
-    name: 'Customer Portal',
+    slug: 'design-system-v2',
+    name: 'Next-Gen Design System v2',
     status: 'completed',
     progress: 100,
-    lead: PEOPLE.priya,
+    lead: PEOPLE.keerthana,
     memberIds: ['usr-3', 'usr-4', 'usr-5', 'u-priya', 'u-edwin'],
     pods: [
       pod('FE', 100, [0, 0, 0, 0, 0, 0, 0, 8], PEOPLE.nithyasri),
@@ -129,11 +132,11 @@ export const PROJECT_RECORDS: ProjectRecord[] = [
     ],
   }),
   project({
-    slug: 'partner-api',
-    name: 'Partner API',
+    slug: 'auth-security',
+    name: 'SSO & Enterprise RBAC',
     status: 'blocked',
     progress: 55,
-    lead: PEOPLE.edwin,
+    lead: PEOPLE.naveen,
     memberIds: ['u-edwin', 'u-divya'],
     pods: [
       pod('FE', 60, [1, 1, 2, 1, 0, 1, 0, 4], PEOPLE.divya),
@@ -179,26 +182,26 @@ export const TICKETS: Ticket[] = [
   t('WRK-104', 'wrkld', 'Implement login authentication', 'Email + SSO sign-in screens wired to the auth service, with session refresh.', 'in-progress', 'story', 'FE', PEOPLE.megha, '2026-11-07T05:40:00Z'),
   t('WRK-108', 'wrkld', 'Create API integration', 'Typed client for the projects and tickets endpoints with error mapping.', 'pr-review', 'integration', 'BE', PEOPLE.megha, '2026-11-06T13:10:00Z'),
   t('WRK-112', 'wrkld', 'Fix dashboard responsiveness', 'Cards overflow at tablet widths; stats row should wrap to two columns.', 'todo', 'bug', 'FE', PEOPLE.megha, '2026-11-06T09:00:00Z'),
-  t('AIA-21', 'ai-analytics', 'Insights panel UI', 'Render model insights with confidence labels and empty states.', 'pod-lead-approved', 'story', 'FE', PEOPLE.megha, '2026-11-05T11:25:00Z'),
-  t('MOB-3', 'mobile-companion', 'Mobile navigation epic', 'Tab bar, deep links and offline shell for the companion app.', 'backlog', 'epic', 'FE', PEOPLE.manya, '2026-11-02T08:00:00Z'),
-  t('CPT-77', 'customer-portal', 'Invoice download', 'PDF invoice download from the billing page.', 'done', 'story', 'FE', PEOPLE.megha, '2026-10-12T08:00:00Z'),
+  t('TEL-21', 'telemetry-engine', 'Insights panel UI', 'Render model insights with confidence labels and empty states.', 'pod-lead-approved', 'story', 'FE', PEOPLE.megha, '2026-11-05T11:25:00Z'),
+  t('MOB-3', 'mobile-pwa', 'Mobile navigation epic', 'Tab bar, deep links and offline shell for the companion app.', 'backlog', 'epic', 'FE', PEOPLE.manya, '2026-11-02T08:00:00Z'),
+  t('DSV-77', 'design-system-v2', 'Invoice download', 'PDF invoice download from the billing page.', 'done', 'story', 'FE', PEOPLE.megha, '2026-10-12T08:00:00Z'),
 
   // Others' tickets
   t('WRK-115', 'wrkld', 'Sprint board API', 'CRUD endpoints for sprint boards.', 'ready-for-integration', 'story', 'BE', PEOPLE.nithin, '2026-11-06T07:00:00Z'),
   t('WRK-121', 'wrkld', 'Pod switcher dropdown', 'Switch active pod from the top navbar.', 'pr-review', 'story', 'FE', PEOPLE.manya, '2026-11-06T16:20:00Z'),
-  t('AIA-24', 'ai-analytics', 'Chart empty states', 'Empty and error states for insight charts.', 'pr-review', 'story', 'FE', PEOPLE.manya, '2026-11-06T11:05:00Z'),
+  t('TEL-24', 'telemetry-engine', 'Chart empty states', 'Empty and error states for insight charts.', 'pr-review', 'story', 'FE', PEOPLE.manya, '2026-11-06T11:05:00Z'),
   t('WRK-118','wrkld', 'E2E smoke suite', 'Playwright smoke tests for core flows.', 'in-progress', 'story', 'QA', PEOPLE.priya, '2026-11-06T10:00:00Z'),
   t('WRK-127', 'wrkld', 'Pod board column layout', 'Responsive column layout for the pod board.', 'pod-lead-approved', 'story', 'FE', PEOPLE.nithyasri, '2026-11-06T12:40:00Z'),
   t('WRK-133', 'wrkld', 'Beta release readiness', 'Track go-live checklist across all pods.', 'in-progress', 'epic', 'QA', PEOPLE.shwetha, '2026-11-07T06:10:00Z'),
-  t('MOB-7', 'mobile-companion', 'Companion app scope', 'Agree MVP scope and pod split for the mobile app.', 'todo', 'epic', 'FE', PEOPLE.shwetha, '2026-11-04T06:10:00Z'),
+  t('MOB-7', 'mobile-pwa', 'Companion app scope', 'Agree MVP scope and pod split for the mobile app.', 'todo', 'epic', 'FE', PEOPLE.shwetha, '2026-11-04T06:10:00Z'),
   t('WRK-124', 'wrkld', 'Wire FE login to auth service', 'Connect WRK-104 screens to the staging auth API.', 'ready-for-integration', 'integration', 'INT', PEOPLE.arun, '2026-11-06T14:00:00Z'),
   t('WRK-126', 'wrkld', 'Contract tests for projects API', 'Consumer-driven contract tests between FE and BE.', 'in-progress', 'integration', 'INT', PEOPLE.arun, '2026-11-05T10:30:00Z'),
   t('WRK-102', 'wrkld', 'Shared API error format', 'Agree and integrate a common error envelope.', 'done', 'integration', 'INT', PEOPLE.arun, '2026-10-30T10:30:00Z'),
-  t('AIA-30','ai-analytics', 'Inference gateway', 'Gateway service in front of the model API.', 'in-progress', 'integration', 'INT', PEOPLE.arun, '2026-11-06T12:00:00Z'),
+  t('TEL-30','telemetry-engine', 'Inference gateway', 'Gateway service in front of the model API.', 'in-progress', 'integration', 'INT', PEOPLE.arun, '2026-11-06T12:00:00Z'),
 
   // Blocker Flag tickets (manually created)
   t('WRK-131', 'wrkld', 'Auth service token endpoint returns 500', 'Login flow (WRK-104) cannot be completed until the token endpoint is fixed in staging.', 'in-progress', 'blocker', 'BE', PEOPLE.nithin, '2026-11-07T04:15:00Z', 'high'),
-  t('AIA-33', 'ai-analytics', 'Model inference API contract undecided', 'Integration pod is waiting on the response schema before wiring the insights panel.', 'todo', 'blocker', 'INT', PEOPLE.arun, '2026-11-06T15:30:00Z', 'medium'),
-  t('PAR-9', 'partner-api', 'Partner sandbox credentials expired', 'All partner API integration tests failing; needs new sandbox keys from the partner.', 'todo', 'blocker', 'INT', PEOPLE.edwin, '2026-11-05T09:45:00Z', 'critical'),
+  t('TEL-33', 'telemetry-engine', 'Model inference API contract undecided', 'Integration pod is waiting on the response schema before wiring the insights panel.', 'todo', 'blocker', 'INT', PEOPLE.arun, '2026-11-06T15:30:00Z', 'medium'),
+  t('SSO-9', 'auth-security', 'Identity provider sandbox credentials expired', 'All SSO integration tests failing; needs new sandbox keys from the identity provider.', 'todo', 'blocker', 'INT', PEOPLE.edwin, '2026-11-05T09:45:00Z', 'critical'),
   t('WRK-090', 'wrkld', 'CI runners out of disk', 'Resolved by expanding runner volumes.', 'done', 'blocker', 'QA', PEOPLE.priya, '2026-10-28T09:45:00Z', 'low'),
 ];
