@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   RefreshCw,
   BarChart3,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useProject } from '@/hooks/useProjects';
@@ -19,8 +20,10 @@ import { SprintSection } from '@/components/sprints/SprintSection';
 import { ProjectProgressSection } from '@/components/analytics/ProjectProgressSection';
 import { ProjectTicketsTable } from '@/components/analytics/ProjectTicketsTable';
 import { PodList } from '@/features/pods/PodList';
-import { MOCK_PODS } from '@/lib/mocks/pod-auth.mock';
-import { matchProjectSlug } from '@/lib/dashboard/api';
+import { CreatePodModal } from '@/features/pods/CreatePodModal';
+import { usePods } from '@/hooks/usePods';
+import { useMockSession } from '@/features/auth/useMockSession';
+import { canPerform } from '@/lib/permissions/usePermissions';
 import type { TicketStatus } from '@/types/dashboard';
 
 function ProjectDetailsContent() {
@@ -28,9 +31,14 @@ function ProjectDetailsContent() {
   const slug = (params?.slug as string) || '';
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreatePodOpen, setIsCreatePodOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus | undefined>();
   const { data: project, isLoading, isError, error, refetch } = useProject(slug);
+  const { data: pods = [] } = usePods(slug);
   const { canEditProject } = useAuth();
+  const session = useMockSession();
+  const canCreatePod =
+    session.status === 'signed-in' && canPerform({ globalRole: session.user.globalRole }, 'create_pod');
 
   const userCanEdit = project ? canEditProject(project.projectLead.email) : false;
 
@@ -141,17 +149,30 @@ function ProjectDetailsContent() {
               Cross-functional engineering pods executing sprint deliverables for this project.
             </p>
           </div>
-          {MOCK_PODS.filter((p) => matchProjectSlug(p.projectSlug, project.slug)).length > 0 && (
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-[#5851d8] border border-indigo-100">
-              {MOCK_PODS.filter((p) => matchProjectSlug(p.projectSlug, project.slug)).length} Pods
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {pods.length > 0 && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-[#5851d8] border border-indigo-100">
+                {pods.length} {pods.length === 1 ? 'Pod' : 'Pods'}
+              </span>
+            )}
+            {canCreatePod && (
+              <Button variant="primary" size="sm" onClick={() => setIsCreatePodOpen(true)}>
+                <Plus className="w-4 h-4" />
+                Create Pod
+              </Button>
+            )}
+          </div>
         </div>
-        <PodList
-          pods={MOCK_PODS.filter((p) => matchProjectSlug(p.projectSlug, project.slug))}
-          projectSlug={project.slug}
-        />
+        <PodList pods={pods} projectSlug={project.slug} />
       </section>
+
+      <CreatePodModal
+        isOpen={isCreatePodOpen}
+        onClose={() => setIsCreatePodOpen(false)}
+        projectSlug={project.slug}
+        projectName={project.name}
+        existingTypes={pods.map((p) => p.type)}
+      />
 
       {/* 5. SPRINT SECTION (Module 3 Owned) */}
       <SprintSection

@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState, use, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { MOCK_PODS } from '@/lib/mocks/pod-auth.mock';
+import { usePod } from '@/hooks/usePods';
 import { PodHeader } from '@/features/pods/PodHeader';
 import { MemberList } from '@/features/pods/MemberList';
 import { AddMemberDialog } from '@/features/pods/AddMemberDialog';
 import { useMockSession } from '@/features/auth/useMockSession';
 import { usePermissions } from '@/lib/permissions/usePermissions';
 import { Can } from '@/lib/permissions/Can';
-import { PodMember, PodRole } from '@/types/auth-pod';
+import { Pod, PodMember, PodRole } from '@/types/auth-pod';
 import { PodBoard } from '@/features/tickets';
 import { Users, LayoutGrid, Plus, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -19,16 +19,18 @@ const demoteLeads = (list: PodMember[]): PodMember[] =>
     member.roleInPod === 'Pod Lead' ? { ...member, roleInPod: 'Contributor' as PodRole } : member
   );
 
-function PodDetailContent({ podId, projectSlug }: { podId: string; projectSlug?: string }) {
+function PodDetailContent({
+  podId,
+  projectSlug,
+  podData,
+}: {
+  podId: string;
+  projectSlug?: string;
+  podData: Pod | null;
+}) {
   const router = useRouter();
   const session = useMockSession();
   const user = session.user;
-  const podData = MOCK_PODS.find(
-    (pod) =>
-      pod.id.toLowerCase() === podId.toLowerCase() ||
-      pod.type.toLowerCase() === podId.toLowerCase() ||
-      `pod-${pod.type.toLowerCase()}` === podId.toLowerCase()
-  );
   const [members, setMembers] = useState<PodMember[]>(podData?.members ?? []);
   const [activeTab, setActiveTab] = useState<'board' | 'members'>('members');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -212,9 +214,26 @@ function PodDetailContent({ podId, projectSlug }: { podId: string; projectSlug?:
   );
 }
 
+// Loads the pod within its project (so pod-fe in two projects never collide),
+// then mounts the detail view keyed by pod so its member state starts from the loaded data.
+function PodDetailLoader({ podId, projectSlug }: { podId: string; projectSlug: string }) {
+  const { data: podData, isLoading } = usePod(projectSlug, podId);
+  if (isLoading) {
+    return <div className="p-6 text-slate-400">Loading pod details...</div>;
+  }
+  return (
+    <PodDetailContent
+      key={`${projectSlug}-${podData?.id ?? podId}`}
+      podId={podId}
+      projectSlug={projectSlug}
+      podData={podData ?? null}
+    />
+  );
+}
+
 function PodDetailResolver({ params }: { params: Promise<{ slug: string; pod: string }> }) {
   const { slug, pod } = use(params);
-  return <PodDetailContent key={`${slug}-${pod}`} podId={pod} projectSlug={slug} />;
+  return <PodDetailLoader key={`${slug}-${pod}`} podId={pod} projectSlug={slug} />;
 }
 
 export default function PodDetailPage({ params }: { params: Promise<{ slug: string; pod: string }> }) {

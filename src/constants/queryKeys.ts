@@ -8,6 +8,7 @@
  *    - projects:  ['projects', ...]
  *    - sprints:   ['sprints', ...]
  *    - tickets:   ['projects', slug, 'tickets', ...]
+ *    - pods:      ['pods', 'project', slug, ...]
  *
  * 2. Key Structure & Granularity:
  *    - Domain root: ['<domain>'] -> Used for broad invalidation (e.g. invalidateQueries({ queryKey: projectKeys.all }))
@@ -24,14 +25,16 @@ import { dashboardKeys } from '@/lib/dashboard/queries';
 import { projectKeys } from '@/hooks/useProjects';
 import { sprintKeys } from '@/hooks/useSprints';
 import { ticketKeys } from '@/features/tickets/hooks/useTickets';
+import { podKeys } from '@/hooks/usePods';
 
-export { dashboardKeys, projectKeys, sprintKeys, ticketKeys };
+export { dashboardKeys, projectKeys, sprintKeys, ticketKeys, podKeys };
 
 export const queryKeys = {
   dashboard: dashboardKeys,
   projects: projectKeys,
   sprints: sprintKeys,
   tickets: ticketKeys,
+  pods: podKeys,
 } as const;
 
 export default queryKeys;
