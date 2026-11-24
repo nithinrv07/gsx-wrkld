@@ -56,7 +56,8 @@ test.describe('TopNavbar Single Layout Architecture', () => {
 
     // 2. Open User Menu and verify Settings link is removed, Sign out is present
     await page.getByRole('button', { name: /User menu/i }).click();
-    await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
+    // Scoped to the top bar: the sidebar has its own Sign out button too.
+    await expect(page.getByRole('banner').getByRole('button', { name: /sign out/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /account settings/i })).toHaveCount(0);
     await page.keyboard.press('Escape');
 
